@@ -1,0 +1,34 @@
+GEOP V7.5 — RELATÓRIO DE VALIDAÇÃO
+Data: 22/09/2026
+Base: GEOP atualizado V4 + hotfix V7.4 de 10/09/2026
+
+ESCOPO
+- Fluxo de solicitação/aprovação/exclusão de OS e OL.
+- Exclusão lógica e lixeira.
+- Restauração pelo TI.
+- Auditoria e notificações.
+- Filtros para ocultar ordens excluídas das telas operacionais.
+
+RESULTADOS
+- PHP lint: 101 arquivos PHP, 101 aprovados, 0 erro sintático.
+- Teste estático específico V7.5: OK.
+- Nenhum DELETE físico de ordens_servico ou limpeza_ordens.
+- .env de produção removido do pacote de distribuição.
+- error_log/logs de runtime removidos do pacote.
+- Atualizador do banco é idempotente: verifica tabela, colunas e índices antes de criar.
+- Compatibilidade pré-migração: enquanto excluida_em não existir, os novos filtros retornam 1=1.
+
+REGRESSÃO
+- Testes estáticos de Ambientes, Limpeza, Ajustes OL/Relatórios e Notificações: OK.
+- O teste legado ol_static.php já falhava na baseline V4 de 10/09/2026 pelas mesmas
+  expectativas antigas de menu/migração; a V7.5 não introduziu essa divergência.
+
+HOMOLOGAÇÃO RECOMENDADA
+1. Aplicar em backup/clone.
+2. Solicitar exclusão com Gestor A.
+3. Confirmar bloqueio de autoaprovação.
+4. Aprovar com Gestor B ou TI.
+5. Executar com TI.
+6. Confirmar sumiço da ordem em listas/relatórios.
+7. Restaurar pela Lixeira.
+8. Repetir para uma OL.

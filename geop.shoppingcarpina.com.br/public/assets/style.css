@@ -1,0 +1,74 @@
+:root{
+  --sc-lime:#c6d300;
+  --sc-lime-2:#e4ec55;
+  --sc-navy:#0b2341;
+  --sc-blue:#113d68;
+  --sc-ink:#14213d;
+  --sc-muted:#6b7280;
+  --sc-bg:#f4f7fb;
+  --sc-card:#ffffff;
+  --sc-border:#e7edf3;
+  --sc-shadow:0 18px 45px rgba(11,35,65,.10);
+  --sc-shadow-soft:0 8px 24px rgba(11,35,65,.08);
+}
+*{scrollbar-width:thin;scrollbar-color:var(--sc-lime) #e9eef5;}
+body{
+  min-height:100vh;
+  background:
+    radial-gradient(circle at top left,rgba(198,211,0,.20),transparent 34rem),
+    linear-gradient(180deg,#f8fbff 0%,var(--sc-bg) 58%,#eef4f9 100%);
+  color:var(--sc-ink);
+  font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+}
+a{color:var(--sc-blue);} a:hover{color:var(--sc-navy);}
+main.container-fluid{max-width:1480px;}
+.navbar{
+  --bs-navbar-padding-y:.55rem;
+  background:rgba(11,35,65,.96)!important;
+  backdrop-filter:blur(18px);
+  border-bottom:1px solid rgba(255,255,255,.10);
+  box-shadow:0 12px 32px rgba(11,35,65,.22);
+}
+.navbar-brand{font-size:1rem;letter-spacing:.02em;display:flex;align-items:center;gap:.6rem;text-transform:uppercase;}
+.navbar-brand::before{content:"";width:34px;height:34px;border-radius:12px;background:#fff url('imobilizado_logo.png') center/78% no-repeat;box-shadow:0 8px 20px rgba(198,211,0,.26);}
+.navbar-nav{gap:.2rem;}
+.navbar .nav-link{border-radius:999px;font-size:.9rem;padding:.48rem .72rem;color:rgba(255,255,255,.82)!important;transition:.18s ease;}
+.navbar .nav-link:hover,.navbar .nav-link.active,.navbar .nav-link.show{background:rgba(198,211,0,.18);color:#fff!important;}
+.navbar .dropdown-menu{border:1px solid rgba(231,237,243,.9);border-radius:18px;box-shadow:var(--sc-shadow);font-size:.9rem;min-width:13rem;padding:.45rem;}
+.navbar .dropdown-item{border-radius:12px;padding:.55rem .75rem;}
+.navbar .dropdown-item:hover,.navbar .dropdown-item.active{background:rgba(198,211,0,.18);color:var(--sc-navy);}
+.nav-user-link{align-items:center;display:flex;gap:.45rem;max-width:280px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:.35rem .65rem!important;}
+.nav-user-name{display:block;max-width:175px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;}
+.nav-user-role{color:var(--sc-lime-2);font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;}
+.btn{border-radius:999px;font-weight:700;box-shadow:none!important;}
+.btn-primary,.btn-success,.btn-dark{background:var(--sc-navy);border-color:var(--sc-navy);color:#fff;}
+.btn-primary:hover,.btn-success:hover,.btn-dark:hover{background:#07182d;border-color:#07182d;}
+.btn-outline-primary,.btn-outline-secondary{border-color:var(--sc-border);color:var(--sc-navy);background:#fff;}
+.btn-outline-primary:hover,.btn-outline-secondary:hover{background:var(--sc-navy);border-color:var(--sc-navy);color:#fff;}
+.btn-warning{background:var(--sc-lime);border-color:var(--sc-lime);color:var(--sc-navy);}
+.card{border:1px solid rgba(231,237,243,.92);border-radius:24px;background:rgba(255,255,255,.92);box-shadow:var(--sc-shadow-soft);overflow:hidden;}
+.card h1,.card h2,.card h3,.h1,.h2,.h3,.h4,.h5{letter-spacing:-.025em;color:var(--sc-navy);font-weight:800;}
+.table{--bs-table-bg:transparent;--bs-table-hover-bg:rgba(198,211,0,.09);margin-bottom:0;}
+.table thead th{white-space:nowrap;background:#f7fafc;color:var(--sc-navy);font-size:.74rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--sc-border);}
+.table tbody td{border-color:#edf2f7;vertical-align:middle;}
+.form-label{font-weight:750;color:var(--sc-navy);font-size:.88rem;}
+.form-control,.form-select{border:1px solid var(--sc-border);border-radius:16px;padding:.72rem .9rem;background:#fbfdff;}
+.form-control:focus,.form-select:focus{border-color:var(--sc-lime);box-shadow:0 0 0 .23rem rgba(198,211,0,.18);background:#fff;}
+.alert{border:0;border-radius:18px;box-shadow:0 8px 18px rgba(11,35,65,.06);}
+.badge{border-radius:999px;padding:.45em .7em;font-weight:800;}
+.metric{font-size:2.15rem;font-weight:900;color:var(--sc-navy);letter-spacing:-.04em;}
+.required:after{content:' *';color:#dc3545;}
+.os-photo{max-width:180px;border-radius:16px;margin:6px;box-shadow:0 8px 22px rgba(11,35,65,.14);}
+.sla-strip{border-left:6px solid #198754;}
+.sla-strip.sla-warning{border-left-color:#ffc107;}
+.sla-strip.sla-danger{border-left-color:#dc3545;}
+.agent-card{border-radius:22px;border:1px solid var(--sc-border);box-shadow:var(--sc-shadow-soft);}
+.touch-target{min-height:48px;}
+.login-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:22px;background:radial-gradient(circle at 15% 15%,rgba(198,211,0,.35),transparent 24rem),linear-gradient(135deg,var(--sc-navy) 0%,#102f55 48%,#07182d 100%)!important;}
+.login-card{max-width:440px;width:100%;border-radius:28px!important;box-shadow:0 28px 80px rgba(0,0,0,.34)!important;}
+.login-logo{width:84px!important;height:84px!important;border-radius:24px!important;background:#fff url('imobilizado_logo.png') center/76% no-repeat!important;color:transparent!important;box-shadow:0 18px 35px rgba(198,211,0,.24);}
+.btn-login{padding:.82rem 1rem;}
+.support-box{background:#f5f8fb;border:1px solid var(--sc-border);border-radius:18px;padding:14px;font-size:13px;}
+@media (max-width:991.98px){.navbar-collapse{padding-top:.65rem}.navbar .nav-link{padding:.55rem .75rem}.navbar .dropdown-menu{background:rgba(255,255,255,.06);box-shadow:none;margin:.15rem 0 .35rem;padding:.25rem}.navbar .dropdown-item{border-radius:.55rem;color:rgba(255,255,255,.85);padding:.5rem .75rem}.navbar .dropdown-item:hover,.navbar .dropdown-item.active{background:rgba(255,255,255,.1);color:#fff}.nav-user-link{margin:.6rem 0;max-width:none}.nav-user-name{max-width:none}}
+@media (max-width:768px){.table-responsive{font-size:.9rem}.metric{font-size:1.55rem}main.container-fluid{padding-left:.75rem!important;padding-right:.75rem!important}.card{border-radius:18px}.btn,.form-control,.form-select{min-height:44px}.mobile-stack{display:grid;gap:.8rem}.mobile-action-bar{position:sticky;bottom:0;z-index:1000;background:#fff;padding:.75rem;margin:0 -.75rem -.75rem;box-shadow:0 -6px 18px rgba(0,0,0,.08)}.navbar-text{display:block;margin:.5rem 0}.nav-user-link{display:flex}}
+@media print{body{background:#fff!important}.navbar,.btn,.mobile-action-bar{display:none!important}.card{box-shadow:none!important;border:1px solid #ddd!important}}

@@ -1,0 +1,80 @@
+GEOP V8.1.4 — BOTÕES MOVÍVEIS + NOTIFICAÇÕES POR PERFIL
+=======================================================
+
+1. BOTÕES FLUTUANTES MOVÍVEIS
+- GEOP IA pode ser arrastado por mouse ou toque.
+- CHAT pode ser arrastado por mouse ou toque.
+- A posição é salva no navegador por usuário.
+- Ao recarregar, cada botão volta à última posição.
+- A posição é limitada à área visível da tela.
+- Em mudança de tamanho/orientação, o botão é reposicionado para não ficar fora da tela.
+- Arrastar não abre acidentalmente o botão.
+
+2. ROTEAMENTO DE NOTIFICAÇÕES
+A central continua sendo por usuario_id, mas agora há regras de pertinência.
+
+GESTÃO:
+- GESTOR
+- GESTOR_SINDICO
+- DIRETOR_EXECUTIVO
+- COORDENADOR_OPERACOES_OBRAS
+
+Recebem alertas gerais de:
+- estoque mínimo;
+- aprovação de estoque negativo;
+- compra aguardando aprovação;
+- aprovações pendentes;
+- OS reaberta;
+- solicitação de liberação pendente de decisão.
+
+TI:
+- deixa de receber automaticamente alertas operacionais/financeiros apenas por ser administrador;
+- continua recebendo fluxos explicitamente administrativos de TI;
+- exclusão de ordem já aprovada e aguardando execução do TI permanece pertinente ao TI;
+- tipos SISTEMA_*, SEGURANCA_*, BACKUP_*, INTEGRIDADE_* e TI_* ficam reservados ao TI.
+
+CFTV / CONTROLE_ACESSO:
+- recebem liberação aprovada/nova liberação pronta para operação;
+- TI deixa de receber automaticamente esses alertas operacionais do CFTV.
+
+NOTIFICAÇÕES PESSOAIS:
+Continuam sendo entregues diretamente ao usuário envolvido:
+- OS atribuída;
+- OL atribuída;
+- escala;
+- preventiva;
+- reprovação;
+- conclusão aguardando aprovação para o gestor responsável;
+- SLA do responsável/gestor;
+- mensagens e demais notificações individuais.
+
+3. FILTRO TAMBÉM NA LEITURA
+Além de corrigir novos envios, a V8.1.4 filtra:
+- sino do cabeçalho;
+- contador;
+- API realtime;
+- Central de Notificações.
+
+Assim, notificações antigas que foram gravadas para um perfil não pertinente deixam de aparecer para esse perfil.
+
+INSTALAÇÃO
+1. Faça backup do GEOP e do banco.
+2. Extraia o ZIP na raiz do GEOP.
+3. Aceite substituir os arquivos.
+4. Como TI, abra:
+   /public/atualizar_geop_ia_v8_1.php
+5. Clique em:
+   Aplicar GEOP IA V8.1.4
+6. Atualize a página com Ctrl+F5.
+
+TESTE DOS BOTÕES
+- Arraste 🤖 GEOP IA para outro canto.
+- Arraste o botão azul do CHAT.
+- Recarregue a página.
+- Ambos devem permanecer nas posições escolhidas.
+
+TESTE DE NOTIFICAÇÕES
+- Crie uma liberação aprovada: deve aparecer para CFTV/CONTROLE_ACESSO.
+- Crie uma solicitação de compra: deve aparecer para a gestão.
+- Atribua uma OS a um agente: deve aparecer para o agente.
+- Aprove uma exclusão que exige execução do TI: deve aparecer para TI.

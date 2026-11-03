@@ -1,0 +1,60 @@
+GEOP V7 — NOTIFICAÇÕES DE LIBERAÇÕES
+=====================================
+
+O QUE FOI IMPLEMENTADO
+----------------------
+1. Nova solicitação pública de liberação:
+   - cria notificação interna para os perfis aprovadores;
+   - aparece automaticamente no GEOP sem atualizar a página;
+   - pode emitir som, vibração e notificação do navegador no celular;
+   - exibe aviso visual dentro do sistema.
+
+2. Aprovação da solicitação:
+   - notifica TI, CFTV e Controle de Acesso;
+   - o alerta abre a página de Liberações aprovadas;
+   - utiliza som e vibração quando os alertas estiverem ativados.
+
+3. Liberação criada manualmente:
+   - também notifica TI, CFTV e Controle de Acesso.
+
+4. E-mail do solicitante:
+   - passou a ser obrigatório na solicitação pública;
+   - é armazenado na solicitação e na liberação aprovada;
+   - aparece para os aprovadores e para o CFTV;
+   - pode ser pesquisado nos filtros;
+   - o sistema tenta enviar confirmação de recebimento, aprovação ou reprovação.
+
+INSTALAÇÃO
+----------
+1. Faça backup do banco e dos arquivos.
+2. Copie as pastas includes, public e sql sobre o GEOP atual.
+3. Preserve o arquivo .env do servidor.
+4. Importe no banco do GEOP:
+   sql/ATUALIZACAO_NOTIFICACOES_LIBERACOES_V7.sql
+5. Saia e entre novamente no sistema.
+6. Atualize o navegador com Ctrl+F5.
+7. No sino de notificações, clique em:
+   "Ativar som, vibração e notificações".
+8. No celular, aceite a permissão solicitada pelo navegador.
+
+COMO TESTAR
+-----------
+1. Entre como TI ou Gestor e ative os alertas.
+2. Em outro navegador, abra o link público de solicitação.
+3. Preencha a solicitação com um e-mail válido.
+4. O aprovador deve receber o alerta automaticamente.
+5. Aprove a solicitação.
+6. Um usuário CFTV ou Controle de Acesso conectado deve receber o novo alerta.
+
+OBSERVAÇÕES IMPORTANTES
+-----------------------
+- Som e vibração dependem do navegador, do sistema operacional e das permissões
+  do celular. O aparelho não pode estar em modo silencioso ou com notificações
+  bloqueadas para o navegador.
+- A consulta automática funciona enquanto o GEOP estiver aberto ou instalado
+  como PWA e em execução. Com o navegador totalmente encerrado, o sistema não
+  consegue consultar novas notificações sem uma infraestrutura externa de Web Push.
+- O envio de e-mail utiliza a função mail() do PHP. Caso o servidor não esteja
+  configurado para envio, a solicitação continuará funcionando e o erro será
+  registrado no log, mas o e-mail não será entregue.
+- O e-mail permanece NULL nos registros antigos para preservar compatibilidade.

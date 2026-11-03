@@ -1,0 +1,11 @@
+GEOP - ATUALIZAÇÃO V7.3 - SOLICITAÇÃO PÚBLICA POR PERÍODO
+Data: 10/09/2026
+
+1. Importe GEOP_BANCO_SOLICITACOES_PUBLICAS_PERIODO_V7_3_CPANEL.sql no banco do GEOP.
+2. Substitua os arquivos do pacote.
+3. No link público, escolha “Período de vários dias”, informe data inicial/final e a faixa horária.
+4. Ao aprovar, a liberação interna recebe o mesmo período.
+5. Em período, o QR permite uma entrada por dia autorizado. No dia seguinte, volta a ficar disponível.
+6. Solicitações de um único dia continuam com o comportamento anterior.
+
+Exemplo: 10/09/2026 a 12/09/2026, das 09:00 às 12:00.

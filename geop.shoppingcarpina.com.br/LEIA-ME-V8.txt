@@ -1,0 +1,12 @@
+GEOP V8 — Liberações + OL
+
+1) Faça backup.
+2) Copie public/liberacoes_aprovadas.php e public/ol_form.php para o GEOP.
+3) Copie includes/layout.php para manter CFTV > Liberações > Liberações ativas.
+4) Preserve o .env.
+5) Garanta que public/uploads/ol exista e seja gravável (750/755 conforme hospedagem).
+6) Não há SQL novo: usa cftv_acesso_eventos e limpeza_ordem_fotos já existentes.
+7) Saia/entre novamente e use Ctrl+F5.
+
+Liberações: TI/CFTV/Controle de Acesso registram entrada/saída com CURRENT_TIMESTAMP do banco.
+OL: abertura no formato da OS, com equipe, checklist e fotos antes/referência.

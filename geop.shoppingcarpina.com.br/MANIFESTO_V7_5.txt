@@ -1,0 +1,49 @@
+GEOP V7.5 — MANIFESTO DA ATUALIZAÇÃO
+Data: 22/09/2026
+Base: geop.shoppingcarpina.com.br_ATUALIZADO_V4_EXCLUSAO_FOTOS_20260910.zip
+Hotfix V7.4 já incorporado na baseline.
+
+ARQUIVOS ALTERADOS:
+- CHANGELOG.md
+- includes/ambientes_qr.php
+- includes/cron.php
+- includes/gestao_integrada.php
+- includes/layout.php
+- includes/operacional.php
+- includes/ordens_limpeza.php
+- includes/ordens_unificadas.php
+- includes/relatorios.php
+- public/agente.php
+- public/ambiente_registro.php
+- public/ambiente_validar.php
+- public/conhecimento.php
+- public/gestao.php
+- public/index.php
+- public/limpeza.php
+- public/ol.php
+- public/ol_detalhe.php
+- public/ol_relatorios.php
+- public/ordem_detalhe.php
+- public/ordens.php
+- public/os-publica.php
+- public/patrimonio_api.php
+- public/preventivas.php
+- public/relatorios.php
+
+ARQUIVOS NOVOS:
+- LEIA-ME-V7-5-EXCLUSAO-ORDENS.txt
+- VALIDACAO_V7_5.txt
+- includes/exclusao_ordens.php
+- public/atualizar_exclusao_ordens_v7_5.php
+- public/exclusoes_ordens.php
+- public/lixeira_ordens.php
+- sql/ATUALIZACAO_EXCLUSAO_ORDENS_V7_5.sql
+- tests/exclusao_ordens_v7_5_static.php
+
+Total alterados: 25
+Total novos: 8
+
+SEGURANÇA:
+- O patch não contém .env.
+- O pacote completo não contém .env de produção.
+- Não há DELETE físico de OS/OL; exclusão é lógica.

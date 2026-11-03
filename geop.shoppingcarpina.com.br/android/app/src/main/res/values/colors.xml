@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="geop_primary">#003B63</color>
+    <color name="geop_primary_dark">#002A47</color>
+    <color name="geop_accent">#9BD000</color>
+    <color name="geop_surface">#FFFFFF</color>
+</resources>

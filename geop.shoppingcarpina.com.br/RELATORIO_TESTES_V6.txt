@@ -1,0 +1,16 @@
+GEOP — RELATÓRIO DE TESTES V6
+Data: 05/08/2026
+
+Validações executadas:
+- Sintaxe PHP: 11 arquivos aprovados no PHP 8.4.
+- Teste estático do módulo OL V5: aprovado.
+- Teste estático da migração OS -> OL V6: aprovado.
+- Presença da tabela de vínculo e índices únicos: aprovada.
+- Presença da permissão ol.migrar_os: aprovada.
+- Botão de migração na OS e vínculo recíproco: aprovados por teste estrutural.
+- Pacote sem .env, sessões ou error_log: aprovado.
+- Integridade do ZIP: validada após compactação.
+
+Observação:
+O teste funcional com banco de produção deve ser realizado primeiro em homologação,
+com backup integral dos arquivos e do banco.

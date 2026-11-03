@@ -1,0 +1,9 @@
+GEOP V10.2
+
+1. Copie includes/ e public/ sobre o GEOP atual.
+2. Entre como TI e execute public/atualizar_ordens_unificadas_v10.php novamente.
+   Ele criará a tabela ordem_limpeza_participantes se ainda não existir.
+   Alternativamente importe sql/ATUALIZACAO_ORDENS_UNIFICADAS_V10_2.sql.
+3. Na Nova OS/OL, ao escolher categoria Limpeza aparecem equipe ASG, responsável principal e supervisor.
+4. Gestor autenticado acessa Relatório Geral sem token adicional.
+5. Faça backup antes do upgrade.

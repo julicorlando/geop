@@ -1,0 +1,13 @@
+GEOP — Menu CFTV / Liberações V7.5
+
+Alteração:
+CFTV > Liberações > Liberações ativas
+
+Instalação:
+1. Faça backup de includes/layout.php.
+2. Envie a pasta includes sobre o GEOP atual.
+3. Preserve o .env.
+4. Saia e entre novamente.
+5. Atualize com Ctrl+F5.
+
+Não exige atualização SQL.

@@ -1,0 +1,21 @@
+GEOP Shopping Carpina - Hotfix de transação na abertura de OL
+Data: 10/09/2026
+
+Erro corrigido:
+There is no active transaction
+
+Causa:
+A função gerar_numero_ol_unificada() iniciava uma transação e depois executava
+CREATE TABLE IF NOT EXISTS ol_numero_sequences. Em MySQL/MariaDB, comandos DDL
+podem encerrar a transação implicitamente. O commit() posterior então falhava.
+
+Correção:
+- Verificação/criação de ol_numero_sequences antes de beginTransaction().
+- Nenhum DDL é executado dentro da transação de geração do número da OL.
+- commit()/rollBack() protegidos com PDO::inTransaction().
+- Mantida a trava SELECT ... FOR UPDATE para evitar números duplicados em acessos simultâneos.
+
+Arquivo alterado:
+includes/ordens_unificadas.php
+
+Não é necessária nova migração de dados para este hotfix.

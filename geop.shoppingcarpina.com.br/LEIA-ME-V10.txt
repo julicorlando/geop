@@ -1,0 +1,23 @@
+GEOP V10 - OS e OL unificadas
+
+1) Faça backup do banco e dos arquivos.
+2) Copie includes/ e public/ sobre o GEOP atual.
+3) Entre como TI e abra:
+   /public/atualizar_ordens_unificadas_v10.php
+4) Clique em "Ativar Ordens unificadas V10".
+5) Saia/entre novamente e use Ctrl+F5.
+
+NOVO FLUXO
+- Ordens > Nova OS / OL.
+- Categoria Limpeza => prefixo OL + checklist + fotos de abertura.
+- Demais categorias => prefixo OS e fluxo normal.
+- Tudo fica em ordens_servico e ordem_detalhe.php.
+- Relatório geral: filtro OS / OL / ambos.
+
+OL ANTIGAS
+- Menu Limpeza mostra "Migrar OL antigas" apenas ao TI.
+- Abra uma OL antiga e clique "Migrar para Ordens".
+- A migração preserva o número OL, checklist e imagens e cria a ordem dentro de ordens_servico.
+- A OL antiga não é apagada; fica como origem histórica.
+
+Observação: ordens antigas já cadastradas como categoria Limpeza são classificadas como tipo OL no relatório, mas o número existente não é renumerado automaticamente para evitar quebra de referências.

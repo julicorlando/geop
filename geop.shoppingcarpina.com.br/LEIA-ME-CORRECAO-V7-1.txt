@@ -1,0 +1,15 @@
+CORREÇÃO GEOP V7.1 — ERRO #1044 information_schema
+
+O SQL anterior consultava information_schema, que pode ser bloqueado em hospedagens cPanel.
+
+MÉTODO RECOMENDADO
+1. Copie as pastas public e sql para o GEOP.
+2. Entre no sistema com o perfil TI.
+3. Abra no navegador: /atualizar_notificacoes_v7.php
+4. Clique em "Ativar atualização V7".
+5. Confirme que todos os itens aparecem como OK.
+6. Volte para CFTV > Liberações.
+
+MÉTODO ALTERNATIVO
+Importe sql/ATUALIZACAO_NOTIFICACOES_LIBERACOES_V7_1_CPANEL.sql.
+Esse arquivo usa IF NOT EXISTS e foi preparado para MariaDB/cPanel.

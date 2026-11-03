@@ -1,0 +1,76 @@
+GEOP V8.1 — GEOP IA CHAT
+=========================
+
+OBJETIVO
+Adicionar ao GEOP um chat de IA capaz de consultar os dados operacionais reais,
+sem conceder SQL livre ao modelo e sem permitir alterações no banco.
+
+ESTA VERSÃO É CUMULATIVA
+- inclui a correção V8.0.1 para schema_migrations(version/applied_at);
+- completa as migrations base da V8, se necessário;
+- instala o GEOP IA V8.1.
+
+FERRAMENTAS DO CHAT
+- buscar Ordens de Serviço;
+- resumir uma OS com histórico, materiais, custos, checklist e anexos;
+- consultar OL;
+- consultar estoque;
+- consultar patrimônio;
+- consultar preventivas;
+- consultar reincidências;
+- consultar base de conhecimento;
+- consultar indicadores operacionais;
+- consultar custos (perfis de gestão);
+- consultar aprovações pendentes (perfis de gestão);
+- consultar liberações, com dados sensíveis reduzidos (perfis de gestão);
+- consultar auditoria (TI).
+
+SEGURANÇA
+- somente leitura;
+- sem SQL gerado pelo modelo;
+- consultas parametrizadas;
+- limite de linhas e chamadas de ferramenta;
+- mesmas restrições do usuário: AGENTE só vê suas OS;
+- custo consolidado/aprovações restritos a perfis de gestão;
+- auditoria restrita a TI;
+- a OPENAI_API_KEY fica apenas no .env;
+- chave nunca é salva no banco;
+- o modelo não recebe credenciais do MariaDB;
+- descrições e textos do banco são tratados como dados, nunca como instruções.
+
+INSTALAÇÃO
+1. Faça backup do GEOP e do banco.
+2. Extraia o ZIP na RAIZ do GEOP.
+3. Aceite substituir:
+   includes/geop_v8.php
+   includes/layout.php
+   public/atualizacoes.php
+4. Os demais arquivos serão adicionados.
+5. Logado como TI, acesse:
+   https://geop.shoppingcarpina.com.br/public/atualizar_geop_ia_v8_1.php
+6. Clique em "Aplicar GEOP IA V8.1".
+7. No .env privado, adicione:
+   OPENAI_API_KEY=sua_chave
+   GEOP_AI_MODEL=gpt-5.6
+   OPENAI_API_BASE=https://api.openai.com/v1
+8. Nunca coloque a chave em arquivo público ou no código PHP.
+9. Acesse:
+   /public/ia_config.php
+10. Ative "GEOP IA Chat".
+11. Abra:
+   /public/ia_chat.php
+
+TESTES RECOMENDADOS
+- "Quais OS estão vencidas?"
+- "Resuma a OS-XXXX."
+- "Quais materiais estão abaixo do estoque mínimo?"
+- "Quais patrimônios tiveram mais OS nos últimos 365 dias?"
+- "Quanto gastamos este mês por categoria?"
+- "Quais preventivas estão atrasadas?"
+- "Quais aprovações estão pendentes?"
+- Como AGENTE, confirmar que não aparecem OS de outros agentes.
+- Como perfil sem acesso, confirmar HTTP 403.
+
+OBSERVAÇÃO
+Esta versão não habilita alterações pelo chat. Ações futuras podem ser adicionadas
+com confirmação explícita, autorização e auditoria.

@@ -1,0 +1,17 @@
+GEOP V7 — RELATÓRIO DE TESTES
+=============================
+
+- 91 arquivos PHP validados com php -l: APROVADO
+- Teste estático de notificações e e-mail: APROVADO
+- Teste Menu Modular V4: APROVADO
+- Teste Ambientes/QR: APROVADO
+- Teste Limpeza V3: APROVADO
+- Teste OL V5: APROVADO
+- Teste Migração OS -> OL V6.1/V6.3: APROVADO
+- JavaScript notificacoes-realtime.js validado com node --check: APROVADO
+- Service Worker validado com node --check: APROVADO
+- manifest.json validado: APROVADO
+
+Observação: envio real de e-mail, permissão de notificação, som e vibração devem ser
+confirmados em homologação porque dependem da configuração do servidor, navegador
+e sistema operacional do aparelho.

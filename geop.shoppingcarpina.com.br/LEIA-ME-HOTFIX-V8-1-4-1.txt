@@ -1,0 +1,26 @@
+GEOP HOTFIX V8.1.4.1
+====================
+
+CORREÇÃO
+O botão flutuante "🤖 GEOP IA" era um link <a href>.
+Chrome/Edge podiam exibir uma caixa de prévia contendo:
+- GEOP IA
+- URL /public/ia_chat.php
+
+Isso podia parecer um segundo botão ou um elemento quebrado durante o arraste.
+
+O launcher agora é um <button>:
+- continua abrindo o GEOP IA ao clicar;
+- continua arrastável;
+- continua salvando a posição no navegador;
+- arrastar não abre o chat;
+- não possui href, eliminando a prévia de URL do navegador.
+
+INSTALAÇÃO
+1. Extraia o ZIP na raiz do GEOP.
+2. Permita substituir:
+   includes/layout.php
+3. Não há alteração no banco.
+4. Pressione Ctrl+F5 no navegador.
+
+Não é necessário executar migration.

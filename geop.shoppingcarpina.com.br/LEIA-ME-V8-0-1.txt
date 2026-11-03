@@ -1,0 +1,47 @@
+GEOP HOTFIX V8.0.1 — SCHEMA_MIGRATIONS
+========================================
+
+Erro corrigido:
+SQLSTATE[42S22]: Column not found: 1054 Unknown column 'versao' in 'WHERE'
+
+CAUSA CONFIRMADA NO BANCO REAL
+A tabela existente é:
+  schema_migrations
+    version VARCHAR(64) PRIMARY KEY
+    applied_at DATETIME
+
+Ela já contém o histórico de migrations do GEOP desde versões anteriores.
+A primeira V8 assumiu nomes novos:
+  versao
+  aplicada_em
+e por isso falhou.
+
+O V8.0.1:
+- reconhece version OU versao;
+- reconhece applied_at OU aplicada_em;
+- preserva todo o histórico existente;
+- adiciona apenas metadados opcionais da V8 (descricao, checksum, aplicada_por, duracao_ms);
+- não renomeia a chave primária antiga;
+- não apaga migrations;
+- corrige também Saúde do GEOP e tela Atualizações.
+
+INSTALAÇÃO
+1. Faça backup.
+2. Extraia este ZIP na raiz do GEOP.
+3. Permita substituir:
+   includes/geop_v8.php
+   public/atualizacoes.php
+4. Acesse como TI:
+   /public/corrigir_migrations_v8_0_1.php
+5. Confirme que aparece:
+   Coluna de versão: version
+   Coluna de data: applied_at
+6. Clique em:
+   Corrigir e continuar atualização V8
+7. As migrations V8 serão registradas na mesma tabela antiga sem repetir as anteriores.
+8. Depois abra:
+   /public/saude_sistema.php
+   /public/atualizacoes.php
+
+Não altere manualmente version para versao.
+Não apague schema_migrations.

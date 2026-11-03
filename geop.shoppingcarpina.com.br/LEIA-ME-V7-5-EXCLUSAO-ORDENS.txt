@@ -1,0 +1,48 @@
+GEOP V7.5 — EXCLUSÃO DE ORDENS COM APROVAÇÃO
+Data: 22/09/2026
+Base: pacote funcional GEOP de 10/09/2026 (V4 + hotfix V7.4)
+
+NOVO FLUXO
+1. Gestor / Gestor Síndico abre uma OS/OL e solicita exclusão com motivo obrigatório.
+2. O mesmo usuário não pode aprovar a própria solicitação.
+3. Outro Gestor / Gestor Síndico ou TI aprova ou reprova.
+4. Se aprovada, somente TI executa a exclusão.
+5. TI também pode excluir diretamente, sem aprovação prévia, informando motivo.
+6. A exclusão é lógica: a ordem vai para a Lixeira.
+7. Somente TI pode restaurar uma ordem da Lixeira.
+8. Todas as ações são registradas na auditoria nativa do GEOP.
+
+INSTALAÇÃO MAIS SIMPLES
+1. FAÇA BACKUP do banco, arquivos, uploads e .env.
+2. Extraia o conteúdo deste pacote SOBRE a raiz atual do GEOP.
+   Preserve o .env atual. O pacote distribuído não contém .env.
+3. Entre no GEOP com perfil TI.
+4. Abra:
+   /public/atualizar_exclusao_ordens_v7_5.php
+5. Clique em "Aplicar atualização V7.5".
+6. Abra "Ordens > Solicitações de exclusão".
+7. Teste uma OS de homologação antes de usar em produção.
+
+NOVAS TELAS
+- public/exclusoes_ordens.php
+- public/lixeira_ordens.php
+- public/atualizar_exclusao_ordens_v7_5.php
+
+NOVO HELPER
+- includes/exclusao_ordens.php
+
+BANCO
+- ordem_solicitacoes_exclusao
+- ordens_servico.excluida_em / excluida_por / exclusao_solicitacao_id
+- limpeza_ordens.excluida_em / excluida_por / exclusao_solicitacao_id
+
+IMPORTANTE
+- Não há DELETE físico de OS/OL nesta versão.
+- Fotos, histórico, materiais, vínculos, auditoria e documentos permanecem preservados.
+- Ordens na lixeira são ocultadas das principais telas operacionais, dashboards, relatórios e rotas.
+- A restauração volta a ordem às telas normais.
+
+ROLLBACK
+1. Restaure os arquivos do backup anterior.
+2. As novas colunas/tabela podem permanecer sem efeito se o código anterior for restaurado.
+3. Se quiser remover a estrutura do banco, faça isso somente depois de validar que não há dados necessários.

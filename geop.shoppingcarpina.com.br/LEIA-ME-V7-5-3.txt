@@ -1,0 +1,28 @@
+GEOP V7.5.3 — COMPATIBILIDADE COM ordem_tipo
+==============================================
+
+Erro corrigido:
+SQLSTATE[HY000]: General error: 1364 Field 'ordem_tipo' doesn't have a default value
+
+Causa:
+O banco antigo mantém `ordem_tipo` como campo obrigatório (OS/OL), enquanto
+a V7.5 usa `entidade` (ORDEM_SERVICO/LIMPEZA_ORDEM).
+
+Correção:
+O código agora grava simultaneamente:
+- ordem_tipo = OS ou OL
+- entidade = ORDEM_SERVICO ou LIMPEZA_ORDEM
+
+INSTALAÇÃO
+1. Faça backup.
+2. Extraia este ZIP na raiz do GEOP.
+3. Substitua:
+   includes/exclusao_ordens.php
+4. Não é necessário recriar tabelas.
+5. Não é necessário rodar novamente a V7.5 ou V7.5.2.
+6. Teste novamente a solicitação de exclusão.
+
+Fallback:
+Se por algum motivo quiser flexibilizar também o campo legado, execute:
+sql/FALLBACK_ORDEM_TIPO_NULLABLE.sql
+Normalmente isso NÃO é necessário após substituir o PHP.

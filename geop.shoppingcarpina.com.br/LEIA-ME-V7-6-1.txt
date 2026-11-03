@@ -1,0 +1,26 @@
+GEOP V7.6.1 — HOTFIX DUPLICATE COLUMN custo_materiais
+====================================================
+
+Corrige:
+SQLSTATE[42S21]: Column already exists: 1060 Duplicate column name 'custo_materiais'
+
+O banco real já possui ordens_servico.custo_materiais.
+A V7.6 detectou a coluna incorretamente no ambiente MariaDB/cPanel e tentou criá-la novamente.
+
+Este hotfix:
+- preserva a coluna e todos os valores existentes;
+- usa SELECT direto como fallback de detecção;
+- trata o erro MariaDB/MySQL 1060 como "coluna já existente";
+- permite completar apenas as duas novas tabelas de conferência de custos.
+
+INSTALAÇÃO
+1. Faça backup.
+2. Extraia este ZIP na raiz do GEOP.
+3. Permita substituir includes/custo_finalizacao.php.
+4. Acesse, logado como TI:
+   /public/corrigir_custo_finalizacao_v7_6_1.php
+5. Se tudo aparecer OK, a correção terminou.
+6. Se as tabelas novas aparecerem PENDENTE, clique em "Completar atualização V7.6.1".
+7. Depois teste a finalização de uma OS.
+
+Não execute ALTER TABLE manual para custo_materiais.

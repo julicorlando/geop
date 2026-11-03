@@ -1,0 +1,19 @@
+GEOP Menu Modular V4 + Limpeza V3 — Relatório de validação
+Data: 03/08/2026
+
+- PHP lint: aprovado em todos os 21 arquivos PHP do pacote.
+- Teste estático do módulo Ambientes: aprovado.
+- Teste estático Limpeza V3: aprovado.
+- Teste estático do Menu Modular V4: aprovado.
+- Menu principal: Ordens, Limpeza, CFTV, Operações, Admin e Relatório geral verificados.
+- Permissões: itens continuam condicionados ao perfil e ao RBAC existente.
+- CFTV: filtros Câmeras OFF e Ocorrências verificados na consulta SQL.
+- Responsividade: dropdowns possuem tratamento específico para desktop e menu recolhido em celulares.
+- Banco: esta atualização de layout não exige migração adicional.
+
+Resultados:
+Ambientes static test: OK
+Limpeza V3 static test: OK (8 áreas, 34 atividades, 532 marcações, múltiplos responsáveis)
+Menu Modular V4 static test: OK
+
+Limitação do teste local: não havia servidor MySQL/MariaDB ativo no ambiente de geração. A sintaxe PHP, referências estruturais, filtros SQL, integridade do pacote e testes estáticos foram validados. Faça backup antes de substituir os arquivos em produção.

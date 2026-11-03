@@ -1,0 +1,36 @@
+GEOP SHOPPING CARPINA - AJUSTE 10/09/2026
+
+1. ABERTURA DE OL NO PADRAO DA OS
+- A tela public/ol_form.php foi reorganizada para seguir o mesmo padrão visual da abertura de OS.
+- Ordem dos dados principais: Título, Prioridade, Local, Categoria, Soluções sugeridas, Prazo/SLA e Descrição.
+- Categoria exibida automaticamente como Limpeza.
+- Recursos específicos da OL foram preservados: tipo de limpeza, ambiente/QR, data/hora programada, equipe, responsável principal, supervisor, checklist, itens adicionais e fotos.
+- A migração OS -> OL continua preservada e restrita pela permissão ol.migrar_os.
+
+2. GESTOR - 10 RELATORIOS SEM TOKEN
+- O perfil GESTOR pode emitir 10 relatórios sem token.
+- Consultar a tela e usar filtros NÃO consome a franquia.
+- Consomem 1 emissão: CSV, PDF completo, apresentação executiva e PDF do cronograma.
+- Na 11ª emissão, o sistema solicita token do TI.
+- Ao validar um token GESTOR_REPORTS válido, a franquia é renovada para mais 10 emissões.
+- A utilização é persistida no banco e não é zerada apenas encerrando a sessão.
+
+3. BANCO DE DADOS
+Antes de colocar a alteração em produção, importe UMA das opções abaixo no banco do GEOP:
+- GEOP_BANCO_GESTOR_RELATORIOS_10_SEM_TOKEN.sql
+ou
+- sql/ATUALIZACAO_GESTOR_RELATORIOS_10_SEM_TOKEN.sql
+
+Ambas possuem o mesmo conteúdo e são idempotentes.
+
+4. ARQUIVOS PRINCIPAIS ALTERADOS
+- public/ol_form.php
+- public/relatorios.php
+- public/gestor_token.php
+- includes/auth.php
+- sql/migrations/012_gestor_relatorios_10_sem_token.sql
+- sql/ATUALIZACAO_GESTOR_RELATORIOS_10_SEM_TOKEN.sql
+
+5. VALIDACAO
+- Sintaxe PHP validada nos arquivos public/ e includes/.
+- Teste específico: tests/ajustes_ol_relatorios_v12_static.php

@@ -1,0 +1,30 @@
+GEOP V7.5.2 — HOTFIX DO BANCO REAL
+====================================
+
+Este hotfix foi preparado após analisar o dump shoppingcarpinac_geopsc de 22/09/2026.
+
+O dump confirmou:
+- ordens_servico EXISTE;
+- limpeza_ordens EXISTE;
+- ordem_solicitacoes_exclusao EXISTE, mas está no formato antigo;
+- os campos de lixeira ainda não estavam nas tabelas de OS/OL.
+
+INSTALAÇÃO
+1. Faça backup do banco e arquivos.
+2. Extraia este ZIP na RAIZ do GEOP, substituindo:
+   includes/exclusao_ordens.php
+3. O arquivo abaixo será adicionado:
+   public/corrigir_exclusao_ordens_v7_5_2.php
+4. Logado como TI, acesse:
+   /public/corrigir_exclusao_ordens_v7_5_2.php
+5. Confira se o banco exibido é o banco do GEOP.
+6. Clique em "Aplicar correção V7.5.2".
+7. Resultado esperado:
+   ordem_solicitacoes_exclusao: ENCONTRADA
+   ordens_servico: ENCONTRADA
+   limpeza_ordens: ENCONTRADA
+   Schema completo V7.5: OK
+8. Abra Solicitações de exclusão e Lixeira e faça um teste com uma OS de teste.
+
+NÃO apague a tabela ordem_solicitacoes_exclusao.
+O hotfix converte o formato antigo preservando os dados.

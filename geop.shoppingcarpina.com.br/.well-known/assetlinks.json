@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "br.com.shoppingcarpina.controleacesso",
+      "sha256_cert_fingerprints": [
+        "07:12:00:B4:9B:3A:4A:37:04:1D:38:94:1D:71:DA:14:1F:73:09:84:16:26:38:7F:3D:D9:00:B9:33:98:58:89"
+      ]
+    }
+  }
+]

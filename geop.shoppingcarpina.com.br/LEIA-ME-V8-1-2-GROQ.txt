@@ -1,0 +1,77 @@
+GEOP V8.1.2 — GROQ CLOUD
+=========================
+
+OBJETIVO
+Adicionar Groq Cloud como provedor online do GEOP IA, mantendo:
+- Ollama local;
+- OpenAI API;
+- as 13 ferramentas seguras de consulta do GEOP;
+- permissões por perfil;
+- auditoria;
+- consulta somente leitura.
+
+PADRÃO DA V8.1.2
+Provedor: GROQ
+Modelo: qwen/qwen3.8-27b
+Endpoint: https://api.groq.com/openai/v1
+
+A integração usa a Responses API compatível com OpenAI e function calling.
+
+INSTALAÇÃO
+1. Faça backup do GEOP e do banco.
+2. Extraia este ZIP na raiz do GEOP.
+3. Aceite substituir os arquivos existentes.
+4. Como TI, abra:
+   /public/atualizar_geop_ia_v8_1.php
+5. Clique em "Aplicar GEOP IA V8.1.2".
+
+CONFIGURAÇÃO DO .ENV
+Adicione no .env privado do GEOP:
+
+GEOP_AI_PROVIDER=GROQ
+GROQ_API_KEY=sua_chave_groq
+GROQ_API_BASE=https://api.groq.com/openai/v1
+GROQ_MODEL=qwen/qwen3.8-27b
+
+Nunca coloque a chave em public/, GitHub ou arquivos baixáveis.
+
+PAINEL
+Abra:
+  /public/ia_config.php
+
+Selecione:
+  Groq Cloud — online
+
+Clique:
+  Testar conexão com Groq
+
+Resultado esperado:
+  Groq acessível
+  qwen/qwen3.8-27b DISPONÍVEL
+
+Depois ative:
+  Ativar GEOP IA Chat
+
+BOTÃO FLUTUANTE
+O botão:
+  🤖 GEOP IA
+
+agora fica no CANTO INFERIOR ESQUERDO.
+
+SEGURANÇA
+- o modelo não executa SQL;
+- todas as consultas passam por ferramentas PHP controladas;
+- AGENTE continua limitado às próprias OS;
+- custos/aprovações ficam restritos à gestão;
+- auditoria continua exclusiva de TI;
+- o modelo não recebe usuário/senha do MariaDB;
+- não existem INSERT/UPDATE/DELETE/DROP expostos à IA.
+
+ALTERNATIVAS
+Para Ollama:
+  GEOP_AI_PROVIDER=OLLAMA
+
+Para OpenAI:
+  GEOP_AI_PROVIDER=OPENAI
+
+A troca de provedor não exige reinstalar o módulo.

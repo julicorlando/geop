@@ -1,0 +1,20 @@
+GEOP Shopping Carpina - V7.4 - Exclusão de fotos OS/OL
+Data: 10/09/2026
+
+Alterações:
+- OS: botão X vermelho no canto superior direito de cada foto.
+- OL: botão X vermelho no canto superior direito de cada evidência.
+- Confirmação obrigatória antes de apagar.
+- Gestor, Gestor Síndico e TI podem apagar fotos das ordens.
+- O autor da foto pode apagar a própria evidência enquanto a ordem não estiver encerrada.
+- Exclusão registrada em histórico/auditoria.
+- O arquivo físico só é removido quando não houver outra referência no GEOP (OS, OL ou histórico de ambiente).
+- Em OL sincronizada com ambiente, a cópia da mesma foto naquele histórico é removida junto da OL.
+
+Banco de dados:
+- Não requer migração SQL.
+
+Arquivos principais alterados:
+- includes/helpers.php
+- public/ordem_detalhe.php
+- public/ol_detalhe.php

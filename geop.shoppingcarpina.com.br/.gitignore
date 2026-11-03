@@ -1,0 +1,11 @@
+/.env
+/var/
+/tmp/
+/public/error_log
+/android/build/
+/android/dist/
+/android/keystore/
+*.apk
+*.aab
+*.keystore
+*.jks

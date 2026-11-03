@@ -1,0 +1,58 @@
+GEOP V8.1.3 — GROQ FREE TIER / RATE LIMIT
+==========================================
+
+ERRO CORRIGIDO
+Rate limit reached ... input tokens per minute (ITPM).
+
+CAUSA
+No Free Tier, a Groq limita tokens por minuto por modelo. O GEOP V8.1.2 enviava:
+- histórico relativamente longo;
+- todas as ferramentas disponíveis;
+- schemas JSON de até 13 ferramentas;
+- resultados das ferramentas em uma segunda chamada.
+
+CORREÇÕES DA V8.1.3
+1. Seleção dinâmica de ferramentas por pergunta.
+   O GEOP envia somente as ferramentas relevantes.
+2. Máximo padrão de 6 ferramentas por requisição Groq.
+3. Histórico Groq reduzido para 4 mensagens anteriores.
+4. Resultado de ferramenta limitado para evitar payload muito grande.
+5. Resposta máxima reduzida para 900 tokens.
+6. Detecção HTTP 429 e header Retry-After.
+7. Fallback automático:
+   principal: qwen/qwen3.8-27b
+   fallback: openai/gpt-oss-20b
+8. O fallback é auditado em ia_chat_execucoes.
+9. A tela mostra principal e fallback no teste de conexão.
+10. Botão GEOP IA permanece no canto inferior esquerdo.
+
+CONFIGURAÇÃO RECOMENDADA NO .ENV
+GEOP_AI_PROVIDER=GROQ
+GROQ_API_KEY=sua_chave
+GROQ_API_BASE=https://api.groq.com/openai/v1
+GROQ_MODEL=qwen/qwen3.8-27b
+GROQ_FALLBACK_MODEL=openai/gpt-oss-20b
+
+INSTALAÇÃO
+1. Backup.
+2. Extraia na raiz do GEOP.
+3. Aceite substituir os arquivos.
+4. Como TI abra:
+   /public/atualizar_geop_ia_v8_1.php
+5. Clique "Aplicar GEOP IA V8.1.3".
+6. Vá em:
+   Admin -> GEOP IA — Configuração
+7. Clique "Testar conexão com Groq".
+8. Confirme principal e fallback DISPONÍVEIS.
+9. Salve:
+   Histórico Groq: 4
+   Ferramentas/Groq: 6
+10. Teste o chat novamente.
+
+COMPORTAMENTO DE RATE LIMIT
+Se o Qwen retornar HTTP 429, o GEOP NÃO fica esperando dentro da página.
+Ele tenta imediatamente o modelo fallback. Se também não houver capacidade,
+a mensagem informa que o limite temporário foi atingido.
+
+SEGURANÇA
+Permanece somente leitura, sem SQL livre e com as mesmas permissões por perfil.

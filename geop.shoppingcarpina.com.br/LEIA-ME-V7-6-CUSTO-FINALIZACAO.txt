@@ -1,0 +1,62 @@
+GEOP V7.6 — POPUP DE CUSTO NA FINALIZAÇÃO DA OS
+================================================
+
+BASE
+- Preparado sobre o GEOP V7.5 + correções V7.5.2/V7.5.3.
+- Banco real shoppingcarpinac_geopsc analisado em 22/09/2026.
+
+O QUE MUDA
+1. Sempre que Gestor/TI tentar finalizar uma OS como ENCERRADA, abre um popup obrigatório.
+2. O popup pergunta se houve custo com material.
+3. Se SIM:
+   - material;
+   - quantidade;
+   - unidade;
+   - custo unitário;
+   - total automático;
+   - opção de baixar também do estoque.
+4. O sistema consolida o valor final em ordens_servico.custo_materiais.
+5. O registro fica auditável nas tabelas:
+   - os_finalizacao_custos
+   - os_finalizacao_custo_itens
+6. Materiais novos informados no popup também entram em materiais_os.
+7. O mesmo custo não é simplesmente somado ao custo anterior: o gestor confirma o TOTAL FINAL oficial,
+   evitando duplicidade com custos já gerados por saída de estoque.
+
+ANÁLISE AUTOMÁTICA
+O sistema calcula um indicador de possível custo usando:
+- título e descrição da OS;
+- observações/histórico;
+- materiais já registrados;
+- custo_materiais e saídas de estoque existentes;
+- descrições das imagens;
+- nomes de itens do estoque citados no texto.
+
+IMPORTANTE SOBRE IMAGENS
+Sem um serviço externo de visão/IA, o PHP não consegue reconhecer semanticamente objetos dentro dos pixels
+da foto. Por isso, esta versão usa descrições/metadados das fotos e mostra as imagens no popup para conferência
+visual do gestor. Ela NÃO inventa material ou custo a partir da imagem.
+
+INSTALAÇÃO
+1. Faça backup do banco e da pasta do GEOP.
+2. Extraia este ZIP na RAIZ do GEOP, substituindo public/ordem_detalhe.php e adicionando os demais arquivos.
+3. Logado como TI, acesse:
+   https://geop.shoppingcarpina.com.br/public/atualizar_custo_finalizacao_v7_6.php
+4. Clique em "Aplicar atualização V7.6".
+5. Resultado esperado:
+   ordens_servico.custo_materiais: OK
+   os_finalizacao_custos: OK
+   os_finalizacao_custo_itens: OK
+6. Abra uma OS de teste e clique em "Finalizar OS".
+7. Confirme que o popup abre ANTES do encerramento.
+
+TESTES RECOMENDADOS
+- OS sem material e sem indícios -> popup sugere baixo indício; marcar NÃO e finalizar.
+- OS com "troca de lâmpada" na descrição -> popup deve alertar possível custo.
+- OS com material já registrado -> popup deve pré-carregar material/quantidade.
+- Material existente no estoque -> custo pode ser preenchido pelo cadastro do estoque.
+- Marcar "Baixar do estoque" -> deve reduzir saldo uma única vez.
+- Custo já existente na OS -> finalizar não deve duplicar o valor.
+- Indício ALTO + marcar NÃO -> exige justificativa.
+- Reprovar conclusão -> não deve abrir popup.
+- Agente marcando CONCLUIDA_PELO_AGENTE -> não encerra e não exige custo ainda; popup é do Gestor/TI na aprovação final.

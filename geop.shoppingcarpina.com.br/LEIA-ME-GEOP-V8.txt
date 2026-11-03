@@ -1,0 +1,76 @@
+GEOP V8.0 — PACOTE CUMULATIVO DE EVOLUÇÃO
+==========================================
+Data do pacote: 24/09/2026
+Base: GEOP V7.5 + V7.6 + hotfix V7.6.1, validado contra o dump real shoppingcarpinac_geopsc.
+
+OBJETIVO
+Transformar o GEOP em uma plataforma operacional mais fechada, auditável e segura, sem duplicar módulos que já existiam.
+
+ENTREGAS DA V8
+1. Núcleo de migrations versionadas (schema_migrations).
+2. Preflight + postflight antes/depois das atualizações.
+3. Backup SQL compactado antes da atualização, armazenado fora da pasta pública.
+4. Central de aprovações: exclusões, reaberturas, estoque negativo, compras e aprovações gerais.
+5. Dashboard financeiro de OS: custo por mês, categoria, local e maiores OS.
+6. Histórico de custos: mão de obra, terceiros, fornecedor, NF/documento e comprovante.
+7. Fluxo de compras: solicitação -> aprovação -> compra -> recebimento -> entrada em estoque.
+8. Central de notificações ampliada: OS sem atualização, aprovações pendentes, SLA e estoque.
+9. Escalonamento e alertas reaproveitando gestao_integrada.
+10. Qualidade da OS em percentual, exibida no detalhe.
+11. Detecção de OS duplicada na abertura; usuário pode revisar e confirmar “Abrir mesmo assim”.
+12. IA assistiva local: prioridade, categoria, materiais e duplicidades. Sempre sugestiva.
+13. Arquitetura preparada para visão; nenhuma foto é enviada a serviço externo por padrão.
+14. Relatório gerencial mensal imprimível/PDF pelo navegador.
+15. Reincidência por patrimônio e por combinação local/categoria.
+16. Vínculo com patrimônio aproveitando ordens_servico.ativo_id e histórico existente.
+17. Checklists por categoria, com snapshot nas novas OS e itens obrigatórios/foto.
+18. Integridade de anexos: referências quebradas e arquivos órfãos, sem exclusão automática.
+19. Segurança: 2FA TOTP opcional, tentativas de login, bloqueio temporário, sessão por inatividade e eventos.
+20. Saúde do GEOP: banco, PHP, disco, uploads, migrations e automações.
+21. Backups internos com SHA-256 e download autenticado pelo TI.
+22. Estrutura para futuras integrações de IA visual sem inventar dados/custos.
+
+INSTALAÇÃO RECOMENDADA
+1. Faça um backup externo do GEOP e banco pelo cPanel.
+2. Extraia este ZIP na RAIZ do GEOP, onde existem includes/, public/, sql/ etc.
+3. Permita substituir os arquivos existentes incluídos no pacote.
+4. NÃO substitua .env: este pacote não contém .env.
+5. Entre no GEOP com perfil TI.
+6. Abra:
+   https://geop.shoppingcarpina.com.br/public/atualizar_geop_v8.php
+7. Mantenha marcado “Criar backup completo do banco antes de aplicar”.
+8. Clique em “Criar backup e aplicar GEOP V8”.
+9. O instalador precisa terminar com a estrutura V8 em OK.
+10. Acesse Admin -> Saúde do GEOP e confirme que não há erro crítico.
+
+IMPORTANTE SOBRE 2FA
+- O 2FA NÃO é exigido automaticamente após instalar.
+- Primeiro, cada usuário TI deve abrir Admin -> Segurança e cadastrar seu autenticador.
+- Somente depois ative “Exigir 2FA para usuários TI”.
+- O segredo TOTP é criptografado com uma chave privada gerada em var/security.key, fora da pasta pública.
+
+IMPORTANTE SOBRE IA VISUAL
+A V8 NÃO manda imagens a nenhum fornecedor externo automaticamente.
+O recurso de “IA assistiva” local trabalha com texto, histórico, estoque e descrições das imagens.
+Reconhecimento real dos pixels exige configurar um provedor de visão em uma atualização específica.
+Isso é proposital para evitar envio não autorizado de imagens e para não inventar material/custo.
+
+TESTES APÓS INSTALAR
+- Login normal.
+- Configurar 2FA em uma conta de teste antes de tornar obrigatório.
+- Abrir OS e verificar sugestões/duplicidades.
+- Criar OS e conferir checklist da categoria.
+- Atualizar item de checklist.
+- Finalizar OS e testar popup de custo V7.6.
+- Abrir Dashboard financeiro.
+- Criar solicitação de compra e aprovar pela Central.
+- Conferir Central de aprovações.
+- Conferir Reincidências.
+- Gerar Relatório mensal.
+- Abrir Saúde do GEOP e Integridade de arquivos.
+- Criar backup interno.
+
+ROLLBACK
+O instalador cria backup SQL antes da migration quando a opção estiver marcada.
+Os arquivos alterados também devem ser mantidos no backup externo feito antes da extração.
+As migrations V8 adicionam tabelas/colunas; não removem dados existentes.

@@ -1,0 +1,83 @@
+GEOP V8.1.1 — OLLAMA LOCAL GRATUITO
+===================================
+
+OBJETIVO
+Adicionar ao GEOP IA o provedor Ollama local, mantendo OpenAI como alternativa.
+
+PADRÃO
+- Provedor: OLLAMA
+- Modelo: qwen3:4b-instruct
+- Contexto: 8192
+- Tool calling: SIM
+- Banco: somente leitura pelas ferramentas do GEOP
+- Custo por chamada no Ollama local: zero
+
+ARQUITETURA
+GEOP PHP/cPanel
+    -> HTTPS/HTTP
+    -> Ollama
+    -> qwen3:4b-instruct
+    -> ferramentas controladas do GEOP
+    -> MariaDB
+
+IMPORTANTE SOBRE O CPANEL
+Se o GEOP estiver em um servidor cPanel diferente do servidor Ubuntu onde o Ollama roda,
+127.0.0.1 NÃO funciona, porque apontaria para o próprio servidor cPanel.
+
+Nesse caso configure OLLAMA_BASE_URL com um endereço HTTPS acessível pelo cPanel.
+Não exponha a porta 11434 diretamente na internet.
+
+A opção recomendada é:
+- Ollama no Ubuntu;
+- reverse proxy/Cloudflare Tunnel;
+- proteção com Cloudflare Access;
+- GEOP usando Client ID/Secret de serviço pelo .env.
+
+VARIÁVEIS
+GEOP_AI_PROVIDER=OLLAMA
+OLLAMA_BASE_URL=http://127.0.0.1:11434
+OLLAMA_MODEL=qwen3:4b-instruct
+OLLAMA_NUM_CTX=8192
+
+Se usar Cloudflare Access:
+OLLAMA_CF_ACCESS_CLIENT_ID=...
+OLLAMA_CF_ACCESS_CLIENT_SECRET=...
+
+INSTALAÇÃO DO OLLAMA NO UBUNTU
+Consulte a instalação oficial do Ollama para sua distribuição.
+Depois instale o modelo:
+  ollama pull qwen3:4b-instruct
+
+Teste localmente no Ubuntu:
+  curl http://127.0.0.1:11434/api/tags
+
+INSTALAÇÃO DO PATCH GEOP
+1. Backup do GEOP e banco.
+2. Extraia este ZIP na raiz do GEOP.
+3. Aceite substituições.
+4. Como TI abra:
+   /public/atualizar_geop_ia_v8_1.php
+5. Aplique/continue a atualização.
+6. Configure o .env.
+7. Abra:
+   /public/ia_config.php
+8. Selecione "Ollama local — gratuito".
+9. Salve.
+10. Clique em "Testar conexão com Ollama".
+11. Resultado esperado:
+    Servidor acessível
+    Modelo qwen3:4b-instruct INSTALADO
+12. Ative "GEOP IA Chat".
+13. Teste:
+    "Quais são as 10 OS abertas mais antigas e quais já estão com SLA vencido?"
+
+OPENAI
+A OpenAI continua disponível. Basta selecionar OPENAI e configurar OPENAI_API_KEY.
+Sem créditos, use OLLAMA.
+
+SEGURANÇA
+- não abra 11434 diretamente para a internet;
+- não coloque Client Secret no código;
+- segredos ficam apenas no .env;
+- Ollama continua sem acesso SQL livre;
+- todas as consultas usam as mesmas ferramentas/permissões da V8.1.
