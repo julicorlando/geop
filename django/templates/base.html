@@ -1,0 +1,115 @@
+{% load static geop %}<!doctype html>
+<html lang="pt-br" data-lado-max="{{ GEOP_LADO_MAX }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b2540">
+  <title>{% block titulo %}GEOP{% endblock %} · {{ GEOP_NOME_UNIDADE }}</title>
+  <link rel="icon" href="{% static 'icon.svg' %}">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <link rel="manifest" href="/manifest.webmanifest">
+  {% block head %}{% endblock %}
+</head>
+<body>
+{% block corpo %}
+<div class="app">
+  <aside class="sidebar" aria-label="Menu principal">
+    <div class="marca">
+      <img src="{% static 'icon.svg' %}" width="30" height="30" alt="">
+      <div>GEOP<small>{{ GEOP_NOME_UNIDADE }}</small></div>
+    </div>
+    {% with url=request.resolver_match.view_name %}
+    <nav>
+      <a href="{% url 'core:dashboard' %}" class="{% if url == 'core:dashboard' %}ativo{% endif %}">Painel</a>
+      <a href="{% url 'core:notificacoes' %}" class="{% if url == 'core:notificacoes' %}ativo{% endif %}">Notificações
+        <span class="contador" id="contador-notificacoes" {% if not notificacoes_nao_lidas %}hidden{% endif %}>{{ notificacoes_nao_lidas }}</span></a>
+      {% if user|pode:"chat.acessar" %}<a href="{% url 'chat:inicio' %}" class="{% if 'chat:' in url %}ativo{% endif %}">Chat</a>{% endif %}
+      {% if user|pode:"ia.usar" %}<a href="{% url 'ia:chat' %}" class="{% if 'ia:' in url %}ativo{% endif %}">GEOP IA</a>{% endif %}
+      {% if user|pode:"os.visualizar_todas" or user|pode:"os.executar" or user|pode:"os.criar" or user|pode:"os.gerenciar" %}
+        <div class="grupo">Ordens</div>
+        <a href="{% url 'ordens:lista' %}" class="{% if url == 'ordens:lista' or url == 'ordens:detalhe' %}ativo{% endif %}">Ordens de serviço</a>
+        {% if user|pode:"os.executar" %}<a href="{% url 'operacao:minha_rota' %}" class="{% if url == 'operacao:minha_rota' %}ativo{% endif %}">Minha rota</a>{% endif %}
+        {% if user|pode:"os.criar" %}<a href="{% url 'ordens:nova' %}" class="{% if url == 'ordens:nova' %}ativo{% endif %}">Nova ordem</a>
+          <a href="{% url 'operacao:servico_essencial' %}" class="{% if url == 'operacao:servico_essencial' %}ativo{% endif %}">Serviço essencial</a>{% endif %}
+        {% if user|pode:"aprovacoes.central" %}<a href="{% url 'operacao:aprovacoes' %}" class="{% if url == 'operacao:aprovacoes' %}ativo{% endif %}">Central de aprovações</a>{% endif %}
+        {% if user|pode:"preventivas.gerenciar" %}<a href="{% url 'operacao:preventivas' %}" class="{% if 'preventiva' in url %}ativo{% endif %}">Preventivas</a>{% endif %}
+        {% if user|pode:"checklists.gerenciar" %}<a href="{% url 'ordens:checklists' %}" class="{% if url == 'ordens:checklists' %}ativo{% endif %}">Checklists</a>{% endif %}
+        {% if user|pode:"os.excluir_solicitar" or user|pode:"os.excluir_analisar" %}<a href="{% url 'ordens:exclusoes' %}" class="{% if url == 'ordens:exclusoes' %}ativo{% endif %}">Exclusões</a>{% endif %}
+        {% if user.is_ti %}<a href="{% url 'ordens:lixeira' %}" class="{% if url == 'ordens:lixeira' %}ativo{% endif %}">Lixeira</a>{% endif %}
+      {% endif %}
+      {% if user|pode:"ambientes.visualizar" or user|pode:"ambientes.validar" or user|pode:"limpeza.acessar" %}
+        <div class="grupo">Limpeza</div>
+        {% if user|pode:"ambientes.visualizar" %}<a href="{% url 'ambientes:lista' %}" class="{% if url == 'ambientes:lista' %}ativo{% endif %}">Ambientes QR</a>{% endif %}
+        {% if user|pode:"ambientes.validar" %}<a href="{% url 'ambientes:pendentes' %}" class="{% if url == 'ambientes:pendentes' %}ativo{% endif %}">Validações</a>{% endif %}
+        {% if user|pode:"limpeza.acessar" %}
+          <a href="{% url 'limpeza:organograma' %}" class="{% if url == 'limpeza:organograma' %}ativo{% endif %}">Organograma</a>
+          <a href="{% url 'limpeza:plano' %}" class="{% if url == 'limpeza:plano' %}ativo{% endif %}">Plano de tarefas</a>
+        {% endif %}
+        {% if user|pode:"ambientes.relatorios" %}<a href="{% url 'ambientes:relatorios' %}" class="{% if url == 'ambientes:relatorios' %}ativo{% endif %}">Relatório de ambientes</a>{% endif %}
+      {% endif %}
+      {% if user|pode:"equipe.gerenciar" or user|pode:"cronograma.gerenciar" or user|pode:"os.executar" %}
+        <div class="grupo">Equipe</div>
+        {% if user|pode:"equipe.gerenciar" %}<a href="{% url 'operacao:equipe' %}" class="{% if url == 'operacao:equipe' %}ativo{% endif %}">Disponibilidade</a>
+          <a href="{% url 'operacao:escalas' %}" class="{% if url == 'operacao:escalas' %}ativo{% endif %}">Escalas</a>{% endif %}
+        <a href="{% url 'operacao:cronograma' %}" class="{% if url == 'operacao:cronograma' %}ativo{% endif %}">Cronograma semanal</a>
+        <a href="{% url 'operacao:passagens' %}" class="{% if url == 'operacao:passagens' %}ativo{% endif %}">Passagem de turno</a>
+      {% endif %}
+      {% if user|pode:"estoque.gerenciar" or user|pode:"compras.solicitar" or user|pode:"patrimonio.consultar" %}
+        <div class="grupo">Materiais e ativos</div>
+        {% if user|pode:"estoque.gerenciar" %}<a href="{% url 'estoque:lista' %}" class="{% if url == 'estoque:lista' or url == 'estoque:material' %}ativo{% endif %}">Estoque</a>{% endif %}
+        {% if user|pode:"compras.solicitar" or user|pode:"compras.gerenciar" %}<a href="{% url 'estoque:compras' %}" class="{% if url == 'estoque:compras' %}ativo{% endif %}">Compras</a>{% endif %}
+        {% if user|pode:"patrimonio.consultar" %}<a href="{% url 'patrimonio:consultar' %}" class="{% if url == 'patrimonio:consultar' %}ativo{% endif %}">Patrimônio</a>{% endif %}
+        {% if user|pode:"iot.gerenciar" %}<a href="{% url 'iot:painel' %}" class="{% if 'iot:' in url %}ativo{% endif %}">IoT e rede</a>{% endif %}
+      {% endif %}
+      {% if user|pode:"cftv.operar" or user|pode:"cftv.liberacoes" or user|pode:"cftv.historico" or user|pode:"controle_acesso.registrar" %}
+        <div class="grupo">CFTV e acesso</div>
+        {% if user|pode:"cftv.operar" or user|pode:"cftv.historico" %}<a href="{% url 'cftv:painel' %}" class="{% if url == 'cftv:painel' or url == 'cftv:relatorio' %}ativo{% endif %}">Plantões CFTV</a>{% endif %}
+        {% if user|pode:"controle_acesso.registrar" %}<a href="{% url 'cftv:controle' %}" class="{% if url == 'cftv:controle' %}ativo{% endif %}">Portaria (QR)</a>{% endif %}
+        {% if user|pode:"cftv.liberacoes" %}<a href="{% url 'cftv:liberacoes' %}" class="{% if url == 'cftv:liberacoes' %}ativo{% endif %}">Liberações</a>{% endif %}
+        {% if user|pode:"cftv.historico" %}<a href="{% url 'cftv:historico' %}" class="{% if url == 'cftv:historico' %}ativo{% endif %}">Histórico de acessos</a>{% endif %}
+      {% endif %}
+      {% if user|pode:"relatorios.visualizar" or user|pode:"conhecimento.visualizar" %}
+        <div class="grupo">Análise</div>
+        {% if user|pode:"relatorios.visualizar" %}<a href="{% url 'relatorios:ordens' %}" class="{% if 'relatorios:' in url %}ativo{% endif %}">Relatórios</a>{% endif %}
+        {% if user|pode:"conhecimento.visualizar" %}<a href="{% url 'conhecimento:lista' %}" class="{% if 'conhecimento:' in url %}ativo{% endif %}">Base de conhecimento</a>{% endif %}
+      {% endif %}
+      {% if user|pode:"usuarios.gerenciar" or user|pode:"perfis.gerenciar" or user|pode:"cadastros.gerenciar" or user|pode:"auditoria.visualizar" %}
+        <div class="grupo">Administração</div>
+        {% if user|pode:"usuarios.gerenciar" %}<a href="{% url 'accounts:usuarios' %}" class="{% if 'accounts:usuario' in url %}ativo{% endif %}">Usuários</a>{% endif %}
+        {% if user|pode:"perfis.gerenciar" %}<a href="{% url 'accounts:perfis' %}" class="{% if 'accounts:perfi' in url %}ativo{% endif %}">Perfis e permissões</a>{% endif %}
+        {% if user|pode:"cadastros.gerenciar" %}<a href="{% url 'core:cadastros' 'locais' %}" class="{% if 'core:cadastro' in url %}ativo{% endif %}">Cadastros</a>{% endif %}
+        {% if user|pode:"auditoria.visualizar" %}<a href="{% url 'core:auditoria' %}" class="{% if url == 'core:auditoria' %}ativo{% endif %}">Auditoria</a>{% endif %}
+        {% if user.is_ti %}<a href="{% url 'core:configuracoes' %}" class="{% if url == 'core:configuracoes' or url == 'core:saude' or url == 'core:backups' or url == 'core:arquivos' %}ativo{% endif %}">Sistema</a>
+          <a href="{% url 'relatorios:token' %}" class="{% if url == 'relatorios:token' %}ativo{% endif %}">Tokens de relatório</a>{% endif %}
+        {% if user.is_staff %}<a href="{% url 'admin:index' %}">Admin Django</a>{% endif %}
+      {% endif %}
+    </nav>
+    {% endwith %}
+  </aside>
+  <div class="principal">
+    <header class="topo">
+      <button class="btn btn-sec btn-peq menu-btn" type="button" data-menu aria-label="Abrir menu">☰ Menu</button>
+      <strong>{% block titulo_topo %}{% endblock %}</strong>
+      <div class="usuario">
+        <span><strong>{{ user.nome }}</strong> <span class="muted">· {{ user.perfil.nome|default:"sem perfil" }}</span></span>
+        <a href="{% url 'accounts:seguranca' %}">Segurança</a>
+        <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button class="btn btn-sec btn-peq">Sair</button></form>
+      </div>
+    </header>
+    <main class="conteudo">
+      {% include "core/_mensagens.html" %}
+      {% block conteudo %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% endblock %}
+<script src="{% static 'js/app.js' %}" defer></script>
+{% if user.is_authenticated %}<script>
+(function(){var el=document.getElementById("contador-notificacoes");if(!el)return;
+  function atualizar(){if(document.hidden)return;fetch("{% url 'core:notificacoes_api' %}",{credentials:"same-origin"}).then(function(r){return r.ok?r.json():null;}).then(function(j){if(!j)return;el.textContent=j.nao_lidas;el.hidden=!j.nao_lidas;document.title=(j.nao_lidas?"("+j.nao_lidas+") ":"")+document.title.replace(/^\(\d+\) /,"");});}
+  setInterval(atualizar,60000);})();
+</script>{% endif %}
+<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("/sw.js").catch(function(){});}</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

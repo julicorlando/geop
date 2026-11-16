@@ -1,0 +1,29 @@
+{% extends "base.html" %}{% load geop %}
+{% block titulo %}Ambientes QR{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Ambientes QR</h1>
+  <div class="acoes">
+    {% if user|pode:"ambientes.validar" %}<a class="btn btn-sec" href="{% url 'ambientes:pendentes' %}">Validações</a>{% endif %}
+    {% if user|pode:"ambientes.gerenciar" %}<a class="btn btn-sec" href="{% url 'ambientes:acao_nova' %}">+ Ação</a><a class="btn" href="{% url 'ambientes:novo' %}">+ Ambiente</a>{% endif %}
+  </div>
+  <p class="subtitulo">Cada ambiente tem um QR Code: o público vê quando foi higienizado; a equipe registra e valida a limpeza.</p></div>
+<div class="grade grade-3">
+{% for a in ambientes %}
+  <div class="card">
+    <div class="card-titulo"><h2>{{ a.nome_publico }}</h2>{% if not a.ativo %}<span class="badge badge-neutro">inativo</span>{% endif %}</div>
+    <p class="muted" style="margin:-.4rem 0 .6rem">{{ a.local }} · a cada {{ a.frequencia_minutos }} min</p>
+    <div class="chips"><span class="badge badge-{{ a.estado.2 }}">{{ a.estado.1 }}</span>{% if a.pendentes %}<span class="badge badge-alerta">{{ a.pendentes }} p/ validar</span>{% endif %}</div>
+    <div class="chips" style="margin-top:.8rem">
+      <a class="btn btn-sec btn-peq" href="{% url 'ambientes:publico' a.token_publico %}" target="_blank">Página pública</a>
+      {% if user|pode:"ambientes.registrar" %}<a class="btn btn-sec btn-peq" href="{% url 'ambientes:registro' a.token_publico %}">Registrar</a>{% endif %}
+      {% if user|pode:"ambientes.gerar_qr" %}<a class="btn btn-sec btn-peq" href="{% url 'ambientes:imprimir_qr' a.pk %}" target="_blank">Imprimir QR</a>
+        <form method="post" action="{% url 'ambientes:regenerar' a.pk %}" data-confirmar="O QR atual deixará de funcionar. Gerar um novo?">{% csrf_token %}<button class="btn btn-sec btn-peq">Novo QR</button></form>{% endif %}
+      {% if user|pode:"ambientes.gerenciar" %}<a class="btn btn-sec btn-peq" href="{% url 'ambientes:editar' a.pk %}">Editar</a>{% endif %}
+    </div>
+  </div>
+{% empty %}<div class="card vazio">Nenhum ambiente cadastrado.</div>{% endfor %}
+</div>
+{% if user|pode:"ambientes.gerenciar" %}
+<div class="card"><h2>Ações de limpeza</h2><div class="chips">{% for ac in acoes %}<a class="badge {% if ac.ativo %}badge-info{% else %}badge-neutro{% endif %}" href="{% url 'ambientes:acao_editar' ac.pk %}">{{ ac.nome }}{% if ac.exige_foto %} 📷{% endif %}</a>{% empty %}<span class="muted">Nenhuma ação cadastrada.</span>{% endfor %}</div></div>
+{% endif %}
+{% endblock %}

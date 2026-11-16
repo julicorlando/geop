@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% load geop %}
+{% block titulo %}Preventivas{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Manutenção preventiva</h1>
+  <div class="acoes">{% if vencidas %}<form method="post">{% csrf_token %}<input type="hidden" name="acao" value="gerar"><button class="btn btn-sec">Gerar {{ vencidas }} vencida{{ vencidas|pluralize }} agora</button></form>{% endif %}
+    <a class="btn" href="{% url 'operacao:preventiva_nova' %}">+ Preventiva</a></div>
+  <p class="subtitulo">As ordens são geradas automaticamente pela rotina diária (comando <code>executar_rotinas</code>); domingos e feriados pulam para o próximo dia útil.</p></div>
+<div class="card"><div class="tabela-wrap"><table>
+  <tr><th>Preventiva</th><th>Local / categoria</th><th>Intervalo</th><th>Próxima</th><th>Agente</th><th>Ordens</th><th></th></tr>
+  {% for p in preventivas %}<tr class="{% if p.ativo and p.proxima_execucao <= hoje %}atrasada{% endif %}">
+    <td><strong>{{ p.titulo }}</strong>{% if not p.ativo %} <span class="badge badge-neutro">inativa</span>{% endif %}<span class="sub">{{ p.get_prioridade_display }}</span></td>
+    <td>{{ p.local }}<span class="sub">{{ p.categoria }}</span></td><td>{{ p.intervalo_dias }} dias</td>
+    <td>{{ p.proxima_execucao|date:"d/m/Y" }}</td><td>{{ p.agente|default:"automático" }}</td><td>{{ p.n_ordens }}</td>
+    <td><a class="btn btn-sec btn-peq" href="{% url 'operacao:preventiva_editar' p.pk %}">Editar</a></td></tr>
+  {% empty %}<tr><td colspan="7" class="vazio">Nenhuma preventiva cadastrada.</td></tr>{% endfor %}
+</table></div></div>
+{% endblock %}

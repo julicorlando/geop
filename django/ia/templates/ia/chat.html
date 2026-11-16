@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block titulo %}GEOP IA{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>GEOP IA</h1><div class="acoes"><a class="btn btn-sec" href="{% url 'ia:assistente' %}">Assistente de abertura</a>{% if user.is_ti %}<a class="btn btn-sec" href="{% url 'ia:configuracao' %}">Configurar</a>{% endif %}</div>
+  <p class="subtitulo">Pergunte sobre ordens, estoque, preventivas e indicadores. As respostas usam os dados do GEOP que o seu perfil pode ver. {% if pronto and not user.is_ti %}{{ restantes }} pergunta(s) restante(s) hoje.{% endif %}</p></div>
+{% if not pronto %}<div class="msg msg-warning" style="margin-bottom:1rem">{{ motivo }}</div>{% endif %}
+<div class="detalhe-layout"><div>
+  <div class="card">
+    {% for m in mensagens %}<div style="margin-bottom:1rem;{% if m.papel == 'user' %}text-align:right{% endif %}">
+      <div style="display:inline-block;max-width:90%;text-align:left;padding:.6rem .8rem;border-radius:12px;background:{% if m.papel == 'user' %}var(--brand-soft){% else %}var(--surface-2){% endif %};border:1px solid var(--border);white-space:pre-wrap">{{ m.conteudo }}</div>
+      {% if m.fontes %}<div class="ajuda">Consultas: {{ m.fontes|join:", " }}</div>{% endif %}</div>
+    {% empty %}<div class="vazio">Comece com uma pergunta.<div class="chips" style="justify-content:center;margin-top:.8rem">{% for s in sugestoes %}<button type="button" class="btn btn-sec btn-peq" onclick="document.getElementById('pergunta').value=this.textContent;document.getElementById('pergunta').focus()">{{ s }}</button>{% endfor %}</div></div>{% endfor %}
+    <form method="post" class="chips" style="margin-top:1rem">{% csrf_token %}<textarea name="pergunta" id="pergunta" rows="2" style="flex:1" placeholder="Sua pergunta" required {% if not pronto %}disabled{% endif %}></textarea><button {% if not pronto %}disabled{% endif %}>Perguntar</button></form>
+  </div>
+</div><div>
+  <div class="card"><h2>Conversas</h2><ul style="padding-left:1rem">{% for c in conversas %}<li><a href="{% url 'ia:conversa' c.pk %}">{{ c.titulo }}</a> <span class="muted">{{ c.atualizado_em|date:"d/m" }}</span></li>{% empty %}<li class="muted">Nenhuma.</li>{% endfor %}</ul>
+    <a class="btn btn-sec btn-peq" href="{% url 'ia:chat' %}">Nova conversa</a>
+    {% if conversa %}<form method="post" style="display:inline" data-confirmar="Apagar esta conversa?">{% csrf_token %}<input type="hidden" name="acao" value="apagar"><button class="btn-link">apagar conversa</button></form>{% endif %}</div>
+</div></div>
+{% endblock %}

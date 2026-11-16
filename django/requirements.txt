@@ -1,0 +1,11 @@
+Django>=5.2,<5.3
+psycopg[binary]>=3.2,<4
+dj-database-url>=2.3,<3
+python-dotenv>=1.0,<2
+gunicorn>=23,<24
+whitenoise>=6.8,<7
+Pillow>=11,<13
+# Verifica as senhas bcrypt ($2y$) do PHP até o primeiro login, quando são regravadas no padrão do Django.
+bcrypt>=4.2,<6
+# Necessário apenas para o comando `importar_legado` (lê o banco MySQL/MariaDB do PHP).
+PyMySQL>=1.1,<2

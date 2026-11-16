@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block titulo %}Notificações{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Notificações</h1>
+  <div class="acoes">
+    <a class="btn btn-sec" href="?filtro=nao_lidas">Não lidas</a><a class="btn btn-sec" href="?">Todas</a>
+    <form method="post" action="{% url 'core:notificacoes_ler_todas' %}">{% csrf_token %}<button class="btn-sec btn">Marcar todas como lidas</button></form>
+  </div>
+</div>
+<div class="card"><div class="tabela-wrap"><table>
+{% for n in pagina %}
+  <tr>
+    <td>{% if not n.lida_em %}<span class="badge badge-primario">nova</span>{% endif %} <strong>{{ n.titulo }}</strong><span class="sub">{{ n.mensagem|truncatechars:160 }}</span></td>
+    <td class="muted" style="white-space:nowrap">{{ n.criado_em|date:"d/m/Y H:i" }}</td>
+    <td>{% if n.url or not n.lida_em %}<form method="post" action="{% url 'core:notificacao_ler' n.pk %}">{% csrf_token %}<button class="btn btn-sec btn-peq">{% if n.url %}Abrir{% else %}Marcar lida{% endif %}</button></form>{% endif %}</td>
+  </tr>
+{% empty %}<tr><td class="vazio">Sem notificações.</td></tr>{% endfor %}
+</table></div>{% include "core/_paginacao.html" %}</div>
+{% endblock %}

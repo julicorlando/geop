@@ -1,0 +1,27 @@
+{% extends "base_publico.html" %}
+{% block titulo %}{{ ambiente.nome_publico }}{% endblock %}
+{% block conteudo %}
+<div class="card" style="text-align:center">
+  <h1>{{ ambiente.nome_publico }}</h1>
+  <p class="muted">{{ ambiente.descricao_publica|default:ambiente.local.nome }}</p>
+  <div class="estado-grande estado-{{ estado.2 }}">{{ estado.1 }}</div>
+  {% if registros %}<p class="muted" style="margin-top:.8rem">Última limpeza validada: {{ registros.0.validado_em|default:registros.0.finalizado_em|date:"d/m/Y \à\s H:i" }}</p>{% endif %}
+</div>
+{% if pode_registrar or pode_validar %}
+<div class="card chips">
+  {% if pode_registrar %}<a class="btn" href="{% url 'ambientes:registro' ambiente.token_publico %}">Registrar limpeza</a>{% endif %}
+  {% if pode_validar %}<a class="btn btn-sec" href="{% url 'ambientes:pendentes' %}">Validar ({{ pendentes }} pendente{{ pendentes|pluralize }})</a>{% endif %}
+</div>
+{% elif not user.is_authenticated %}
+<p style="text-align:center"><a href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">Equipe GEOP: entrar para registrar</a></p>
+{% endif %}
+{% if ambiente.exibir_historico %}
+<div class="card"><h2>Últimas higienizações</h2>
+  <ul class="linha-tempo">
+  {% for r in registros %}<li><div class="quando">{{ r.finalizado_em|date:"d/m/Y H:i" }}</div>
+    <strong>{{ r.equipe_nomes }}</strong><br>{% for i in r.itens.all %}{{ i.descricao }}{% if not forloop.last %} · {% endif %}{% endfor %}
+    {% if ambiente.exibir_fotos %}<div class="galeria" style="margin-top:.4rem">{% for f in r.fotos.all %}{% if f.publica %}<a class="foto" href="{% url 'ambientes:foto_publica' ambiente.token_publico f.pk %}" data-ampliar><img loading="lazy" src="{% url 'ambientes:foto_publica_mini' ambiente.token_publico f.pk %}" alt=""></a>{% endif %}{% endfor %}</div>{% endif %}
+  </li>{% empty %}<li>Nenhuma limpeza validada ainda.</li>{% endfor %}
+  </ul></div>
+{% endif %}
+{% endblock %}

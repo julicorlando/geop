@@ -1,0 +1,6 @@
+Olá, {{ user.nome }}.
+
+Para criar uma nova senha no GEOP, acesse:
+{{ protocol }}://{{ domain }}{% url 'accounts:recuperar_confirmar' uidb64=uid token=token %}
+
+Se você não pediu, ignore este e-mail.

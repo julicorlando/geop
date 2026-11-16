@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block titulo %}Relatório de ambientes{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Relatório de ambientes</h1>
+  <form class="acoes" method="get"><select name="dias" onchange="this.form.submit()">
+    <option value="7" {% if dias == 7 %}selected{% endif %}>Últimos 7 dias</option><option value="30" {% if dias == 30 %}selected{% endif %}>Últimos 30 dias</option>
+    <option value="90" {% if dias == 90 %}selected{% endif %}>Últimos 90 dias</option><option value="365" {% if dias == 365 %}selected{% endif %}>Último ano</option></select></form></div>
+<div class="card"><div class="tabela-wrap"><table>
+  <tr><th>Ambiente</th><th>Registros</th><th>Validados</th><th>Reprovados/correção</th><th>Pendentes</th></tr>
+  {% for l in linhas %}<tr><td><strong>{{ l.nome_publico }}</strong><span class="sub">{{ l.local }}</span></td><td>{{ l.total }}</td><td>{{ l.validadas }}</td><td>{{ l.reprovadas }}</td><td>{{ l.pendentes }}</td></tr>
+  {% empty %}<tr><td colspan="5" class="vazio">Sem ambientes.</td></tr>{% endfor %}
+</table></div></div>
+{% endblock %}

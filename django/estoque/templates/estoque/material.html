@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block titulo %}{{ material.nome }}{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>{{ material.nome }}</h1><div class="acoes"><a class="btn btn-sec" href="{% url 'estoque:editar' material.pk %}">Editar</a></div></div>
+<div class="kpis">
+  <div class="kpi"><div class="valor">{{ material.quantidade_atual|floatformat:"-2" }}</div><div class="rotulo">Saldo ({{ material.unidade|default:"un" }})</div></div>
+  <div class="kpi"><div class="valor">{{ material.disponivel|floatformat:"-2" }}</div><div class="rotulo">Disponível (descontando reservas)</div></div>
+  <div class="kpi"><div class="valor">R$ {{ material.custo_unitario|floatformat:2 }}</div><div class="rotulo">Custo médio</div></div></div>
+<div class="detalhe-layout"><div>
+  <div class="card"><h2>Movimentações</h2><div class="tabela-wrap"><table>
+    <tr><th>Data</th><th>Tipo</th><th>Qtd.</th><th>Ordem</th><th>Por</th></tr>
+    {% for m in movimentacoes %}<tr><td>{{ m.criado_em|date:"d/m/Y H:i" }}</td><td>{{ m.get_tipo_display }}<span class="sub">{{ m.observacao }}</span></td>
+      <td>{{ m.quantidade|floatformat:"-2" }}</td><td>{% if m.ordem %}<a href="{% url 'ordens:detalhe' m.ordem_id %}">{{ m.ordem.numero }}</a>{% endif %}</td><td>{{ m.usuario|default:"" }}</td></tr>
+    {% empty %}<tr><td colspan="5" class="vazio">Sem movimentações.</td></tr>{% endfor %}</table></div>
+    {% include "core/_paginacao.html" with pagina=movimentacoes %}</div>
+</div><div>
+  <form method="post" class="card">{% csrf_token %}<h2>Movimentar</h2>{% include "core/_campos.html" %}<button>Registrar</button></form>
+  {% if reservas %}<div class="card"><h2>Reservas ativas</h2><ul>{% for r in reservas %}<li><a href="{% url 'ordens:detalhe' r.ordem_id %}">{{ r.ordem.numero }}</a> — {{ r.quantidade|floatformat:"-2" }} ({{ r.get_status_display|lower }})</li>{% endfor %}</ul></div>{% endif %}
+</div></div>
+{% endblock %}

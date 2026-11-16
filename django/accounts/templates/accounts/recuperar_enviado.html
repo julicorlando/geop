@@ -1,0 +1,3 @@
+{% extends "base.html" %}
+{% block titulo %}Verifique seu e-mail{% endblock %}
+{% block corpo %}<div class="login-wrap"><div class="card login-card"><h1>Verifique seu e-mail</h1><p class="muted">Se o endereço estiver cadastrado, o link chega em alguns minutos. Sem e-mail configurado no servidor, peça ao TI um link de convite.</p><a href="{% url 'accounts:login' %}">Voltar ao login</a></div></div>{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block titulo %}Cronograma{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Cronograma semanal · {{ semana|date:"d/m" }}</h1>
+  <div class="acoes"><a class="btn btn-sec" href="?semana={{ anterior|date:'Y-m-d' }}">← Semana anterior</a><a class="btn btn-sec" href="?semana={{ proxima|date:'Y-m-d' }}">Próxima →</a><button class="btn btn-sec" onclick="print()">Imprimir</button></div></div>
+<div class="grade grade-3">
+{% for n, nome, data, itens in dias %}<div class="card"><h2>{{ nome }} <span class="muted">{{ data|date:"d/m" }}</span></h2>
+  {% for i in itens %}<div style="border-bottom:1px solid var(--border);padding:.4rem 0">
+    <strong>{{ i.hora_inicio|time:"H:i" }}–{{ i.hora_fim|time:"H:i" }}</strong> {{ i.titulo }}<span class="sub">{{ i.agente }}{% if i.local %} · {{ i.local }}{% endif %}</span>
+    <form method="post" class="chips nao-imprimir" style="margin-top:.2rem">{% csrf_token %}<input type="hidden" name="id" value="{{ i.pk }}"><input type="hidden" name="acao" value="status">
+      <select name="status" onchange="this.form.submit()" style="max-width:150px;padding:.2rem">{% for v, r in status %}<option value="{{ v }}" {% if v == i.status %}selected{% endif %}>{{ r }}</option>{% endfor %}</select>
+      {% if gerenciar %}<button name="acao" value="excluir" class="btn-link" onclick="return confirm('Excluir?')">excluir</button>{% endif %}</form></div>
+  {% empty %}<p class="muted">—</p>{% endfor %}</div>{% endfor %}
+</div>
+{% if form %}<form method="post" class="card nao-imprimir">{% csrf_token %}<input type="hidden" name="acao" value="criar"><h2>Nova tarefa nesta semana</h2>{% include "core/_campos.html" %}<button>Adicionar</button></form>{% endif %}
+{% endblock %}

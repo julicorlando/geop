@@ -1,0 +1,32 @@
+{% extends "base.html" %}{% load geop %}
+{% block titulo %}Liberações de acesso{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Liberações de acesso</h1><div class="acoes"><a class="btn btn-sec" href="{% url 'cftv:historico' %}">Histórico</a></div></div>
+<div class="card"><h2>Solicitações pendentes ({{ pendentes|length }})</h2><div class="tabela-wrap"><table>
+{% for s in pendentes %}<tr><td><strong>{{ s.protocolo }}</strong> — {{ s.nome_completo }}<span class="sub">{{ s.empresa }} · {{ s.telefone }} · {{ s.email }}</span>{% for p in s.pessoas.all %}<span class="sub">+ {{ p.nome_completo }}</span>{% endfor %}</td>
+  <td>{{ s.destino_nome }}<span class="sub">{{ s.get_destino_tipo_display }} · resp.: {{ s.responsavel_interno|default:"—" }}</span></td>
+  <td>{{ s.data_acesso|date:"d/m/Y" }}{% if s.data_fim %} a {{ s.data_fim|date:"d/m/Y" }}{% endif %}<span class="sub">{{ s.hora_inicio|time:"H:i" }}{% if s.hora_fim %}–{{ s.hora_fim|time:"H:i" }}{% endif %}</span></td>
+  <td>{{ s.motivo|truncatechars:90 }}</td>
+  <td><form method="post" class="chips">{% csrf_token %}<input type="hidden" name="id" value="{{ s.pk }}"><input type="text" name="justificativa" placeholder="Justificativa" style="max-width:150px"><button name="acao" value="aprovar" class="btn btn-peq btn-sucesso">Aprovar</button><button name="acao" value="reprovar" class="btn btn-peq btn-perigo">Reprovar</button></form></td></tr>
+{% empty %}<tr><td class="vazio">Nenhuma solicitação pendente.</td></tr>{% endfor %}</table></div></div>
+<div class="detalhe-layout"><div>
+  <div class="card"><h2>Liberações vigentes e futuras</h2><div class="tabela-wrap"><table>
+  {% for l in proximas %}<tr><td><strong>{{ l.nome_completo }}</strong><span class="sub">CPF {{ l.cpf|slice:":3" }}.***.***-{{ l.cpf|slice:"9:" }}</span></td><td>{{ l.destino_nome }}</td><td>{{ l.data_acesso|date:"d/m" }}{% if l.data_fim and l.data_fim != l.data_acesso %} a {{ l.data_fim|date:"d/m" }}{% endif %} {{ l.hora_inicio|time:"H:i" }}</td>
+    <td><form method="post" data-confirmar="Cancelar a liberação de {{ l.nome_completo }}?">{% csrf_token %}<input type="hidden" name="acao" value="cancelar"><input type="hidden" name="id" value="{{ l.pk }}"><button class="btn-link">cancelar</button></form></td></tr>
+  {% empty %}<tr><td class="vazio">Nenhuma.</td></tr>{% endfor %}</table></div></div>
+  <div class="card"><h2>Links públicos de solicitação</h2>
+    <ul>{% for l in links %}<li><a href="{{ l.get_absolute_url }}" target="_blank">{{ l.titulo }}</a> — {% if l.permanente %}permanente{% else %}{{ l.usos }}/{{ l.limite_usos }} usos{% endif %}, até {{ l.expira_em|date:"d/m H:i" }}
+      <button type="button" class="btn-link" onclick="navigator.clipboard.writeText(location.origin+'{{ l.get_absolute_url }}');this.textContent='copiado'">copiar</button>
+      <form method="post" style="display:inline">{% csrf_token %}<input type="hidden" name="acao" value="desativar_link"><input type="hidden" name="id" value="{{ l.pk }}"><button class="btn-link">desativar</button></form></li>{% empty %}<li class="muted">Nenhum link ativo.</li>{% endfor %}</ul>
+    <form method="post" class="filtros">{% csrf_token %}<input type="hidden" name="acao" value="criar_link">
+      <div class="campo"><label>Título</label><input type="text" name="titulo" placeholder="Ex.: Prestadores da loja X"></div>
+      <div class="campo"><label>Destino padrão</label><input type="text" name="destino_padrao"></div>
+      <div class="campo"><label>Validade (h)</label><input type="number" name="horas" value="24" min="1"></div>
+      <div class="campo"><label>Usos</label><input type="number" name="limite" value="1" min="1"></div>
+      <div class="campo"><label class="checkbox"><input type="checkbox" name="permanente" value="1"> sem limite de usos</label><button>Criar link</button></div></form></div>
+</div><div>
+  <form method="post" class="card">{% csrf_token %}<input type="hidden" name="acao" value="salvar"><h2>Nova liberação manual</h2>{% include "core/_campos.html" %}<button>Liberar</button></form>
+  <div class="card"><h2>Destinos cadastrados</h2><div class="chips">{% for d in destinos %}<form method="post" style="display:inline">{% csrf_token %}<input type="hidden" name="acao" value="alternar_destino"><input type="hidden" name="id" value="{{ d.pk }}"><button class="badge {% if d.ativo %}badge-info{% else %}badge-neutro{% endif %}" style="border:0;cursor:pointer" title="ativar/desativar">{{ d.nome }}</button></form>{% endfor %}</div>
+    <form method="post" class="chips" style="margin-top:.6rem">{% csrf_token %}<input type="hidden" name="acao" value="destino"><select name="tipo" style="max-width:170px">{% for v, r in tipos %}<option value="{{ v }}">{{ r }}</option>{% endfor %}</select><input type="text" name="nome" placeholder="Nome" style="max-width:170px"><button class="btn btn-peq">+</button></form></div>
+</div></div>
+{% endblock %}

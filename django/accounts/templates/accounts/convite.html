@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block titulo %}Convite{% endblock %}
+{% block conteudo %}
+<div class="card" style="max-width:720px"><h1>Convite para {{ usuario.nome }}</h1>
+  {% if enviado %}<p class="msg msg-success">Enviado para {{ usuario.email }}.</p>{% else %}<p class="msg msg-warning">O e-mail não foi enviado (servidor de e-mail não configurado). Copie o link abaixo e envie ao usuário.</p>{% endif %}
+  <div class="campo"><input type="text" value="{{ link }}" readonly onclick="this.select()"></div>
+  <div class="chips"><button type="button" onclick="navigator.clipboard.writeText('{{ link|escapejs }}');this.textContent='Copiado'">Copiar link</button>
+  <a class="btn btn-sec" href="https://wa.me/?text={{ link|urlencode }}" target="_blank" rel="noopener">Enviar por WhatsApp</a><a class="btn btn-sec" href="{% url 'accounts:usuarios' %}">Voltar</a></div>
+  <p class="ajuda">Válido por 72 horas e para um único uso.</p></div>
+{% endblock %}

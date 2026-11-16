@@ -1,0 +1,15 @@
+{% load static %}<!doctype html><html lang="pt-br"><head><meta charset="utf-8"><title>QR · {{ ambiente.nome_publico }}</title>
+<style>body{font-family:system-ui,sans-serif;margin:0;background:#eef2f7}.acoes{padding:1rem;text-align:center}.acoes button,.acoes a{font:inherit;padding:.5rem 1rem;margin:0 .3rem}
+.folha{background:#fff;width:190mm;min-height:260mm;margin:0 auto 2rem;padding:18mm;box-sizing:border-box;text-align:center;border-radius:8px}
+.marca{letter-spacing:.2em;font-weight:700;color:#0f4c81}.titulo{font-size:34pt;margin:.6rem 0 .2rem}.sub{color:#475569;font-size:14pt}
+#qr{display:inline-block;margin:12mm 0;padding:6mm;border:2px solid #0f4c81;border-radius:12px}.chamada{font-size:18pt;font-weight:700}.url{font-size:9pt;color:#64748b;word-break:break-all;margin-top:8mm}
+@media print{body{background:#fff}.acoes{display:none}.folha{margin:0;border-radius:0}}</style></head>
+<body><div class="acoes"><a href="{% url 'ambientes:lista' %}">Voltar</a><button onclick="print()">Imprimir</button></div>
+<main class="folha"><div class="marca">GEOP · {{ GEOP_NOME_UNIDADE|upper }}</div><h1 class="titulo">{{ ambiente.nome_publico }}</h1>
+<div class="sub">{{ ambiente.descricao_publica|default:ambiente.local.nome }}</div><div id="qr"></div>
+<div class="chamada">Aponte a câmera e veja as últimas higienizações</div><p>Equipe de limpeza e supervisão: escaneie para registrar ou validar.</p>
+<div class="url">{{ url }}</div><div class="url">Ambiente #{{ ambiente.pk }}</div></main>
+<script src="{% static 'js/vendor/qrcode.min.js' %}"></script>
+{{ url|json_script:"qr-url" }}
+<script>new QRCode(document.getElementById("qr"),{text:JSON.parse(document.getElementById("qr-url").textContent),width:300,height:300,correctLevel:QRCode.CorrectLevel.H});</script>
+</body></html>

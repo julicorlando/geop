@@ -1,0 +1,20 @@
+# Ambiente completo para testes/homologação: `docker compose up --build`
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: geop
+      POSTGRES_USER: geop
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-troque-esta-senha}
+    volumes: [pgdata:/var/lib/postgresql/data]
+  web:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://geop:${POSTGRES_PASSWORD:-troque-esta-senha}@db:5432/geop
+    volumes: [media:/data/media]
+    ports: ["8000:8000"]
+    depends_on: [db]
+volumes:
+  pgdata:
+  media:

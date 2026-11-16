@@ -1,0 +1,19 @@
+{% load geop %}{% comment %}Renderiza os campos de um formulário. Use: {% include "core/_campos.html" with form=form %}{% endcomment %}
+{% if form.non_field_errors %}<div class="msg msg-error" style="margin-bottom:1rem">{% for e in form.non_field_errors %}{{ e }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</div>{% endif %}
+{% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+<div class="form-grade">
+{% for field in form.visible_fields %}
+  {% with tipo=field.field.widget.input_type classe=field|classe_widget %}
+  <div class="campo{% if classe == 'Textarea' or classe == 'CheckboxSelectMultiple' or classe == 'MultiplosArquivosInput' %} campo-largo{% endif %}">
+    {% if tipo == "checkbox" and classe != "CheckboxSelectMultiple" %}
+      <label class="checkbox">{{ field }} {{ field.label }}</label>
+    {% else %}
+      <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span class="muted">*</span>{% endif %}</label>
+      {{ field }}
+    {% endif %}
+    {% if field.help_text %}<div class="ajuda">{{ field.help_text|safe }}</div>{% endif %}
+    {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+  </div>
+  {% endwith %}
+{% endfor %}
+</div>

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block titulo %}Checklists por categoria{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Checklists por categoria</h1><p class="subtitulo">Cada nova ordem recebe uma cópia do checklist ativo da sua categoria. Itens obrigatórios bloqueiam o encerramento.</p></div>
+<form method="post" class="card filtros">{% csrf_token %}<input type="hidden" name="acao" value="modelo">
+  <div class="campo"><label>Categoria</label><select name="categoria" required>{% for c in categorias %}<option value="{{ c.pk }}">{{ c.nome }}</option>{% endfor %}</select></div>
+  <div class="campo"><label>Nome do modelo</label><input type="text" name="nome" required placeholder="Ex.: Manutenção de ar-condicionado"></div>
+  <div class="campo"><button>Criar modelo</button></div></form>
+{% for m in modelos %}
+<div class="card"><div class="card-titulo"><h2>{{ m.categoria }} — {{ m.nome }}</h2>{% if not m.ativo %}<span class="badge badge-neutro">inativo</span>{% endif %}
+  <div class="acoes"><form method="post">{% csrf_token %}<input type="hidden" name="acao" value="alternar"><input type="hidden" name="modelo_id" value="{{ m.pk }}"><button class="btn btn-sec btn-peq">{% if m.ativo %}Desativar{% else %}Ativar{% endif %}</button></form></div></div>
+  <ol>{% for i in m.itens.all %}<li>{{ i.descricao }}{% if i.obrigatorio %} <span class="badge badge-alerta">obrigatório</span>{% endif %}{% if i.exige_foto %} <span class="badge badge-info">foto</span>{% endif %}
+    <form method="post" style="display:inline">{% csrf_token %}<input type="hidden" name="acao" value="remover_item"><input type="hidden" name="item_id" value="{{ i.pk }}"><button class="btn-link">remover</button></form></li>{% endfor %}</ol>
+  <form method="post" class="chips" style="align-items:center">{% csrf_token %}<input type="hidden" name="acao" value="item"><input type="hidden" name="modelo_id" value="{{ m.pk }}">
+    <input type="text" name="descricao" placeholder="Novo item" required style="max-width:340px"><label class="checkbox"><input type="checkbox" name="obrigatorio" value="1"> obrigatório</label><label class="checkbox"><input type="checkbox" name="exige_foto" value="1"> exige foto</label><button class="btn btn-peq">Adicionar</button></form>
+</div>
+{% empty %}<div class="card vazio">Nenhum modelo criado.</div>{% endfor %}
+{% endblock %}

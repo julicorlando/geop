@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block titulo %}Central de aprovações{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Central de aprovações</h1><p class="subtitulo">Tudo que aguarda uma decisão sua, em um só lugar ({{ total }} pendência{{ total|pluralize }}).</p></div>
+{% for chave, titulo, itens in grupos %}{% if itens %}
+<div class="card"><h2>{{ titulo }} <span class="muted">({{ itens|length }})</span></h2><div class="tabela-wrap"><table>
+{% for i in itens %}<tr>
+  {% if chave == "estoque" %}
+    <td><a href="{% url 'ordens:detalhe' i.ordem_id %}">{{ i.ordem.numero }}</a> — {{ i.material.nome }} × {{ i.quantidade|floatformat:"-2" }}<span class="sub">{{ i.justificativa }} · por {{ i.usuario }}</span></td>
+    <td><form method="post" class="chips">{% csrf_token %}<input type="hidden" name="reserva_id" value="{{ i.pk }}"><input type="text" name="observacao" placeholder="Observação" style="max-width:160px"><button name="acao" value="aprovar" class="btn btn-peq btn-sucesso">Aprovar</button><button name="acao" value="reprovar" class="btn btn-peq btn-perigo">Reprovar</button></form></td>
+  {% elif chave == "compras" %}<td>Compra #{{ i.pk }} — R$ {{ i.valor_previsto|floatformat:2 }}<span class="sub">{{ i.solicitante }} · {{ i.justificativa|truncatechars:80 }}</span></td><td><a class="btn btn-peq" href="{% url 'estoque:compras' %}?status=SOLICITADA">Analisar</a></td>
+  {% elif chave == "conclusoes" or chave == "encerramentos" %}<td><a href="{% url 'ordens:detalhe' i.pk %}">{{ i.numero }}</a> — {{ i.titulo }}<span class="sub">{{ i.local }}{% if i.agente %} · {{ i.agente }}{% endif %}</span></td><td><a class="btn btn-peq" href="{% url 'ordens:detalhe' i.pk %}">Abrir</a></td>
+  {% elif chave == "exclusoes" or chave == "exclusoes_exec" %}<td><a href="{% url 'ordens:detalhe' i.ordem_id %}">{{ i.ordem.numero }}</a> — {{ i.motivo|truncatechars:90 }}</td><td><a class="btn btn-peq" href="{% url 'ordens:exclusoes' %}?estado={{ i.estado }}">Analisar</a></td>
+  {% elif chave == "reaberturas" %}<td><a href="{% url 'ordens:detalhe' i.ordem_id %}">{{ i.ordem.numero }}</a> — {{ i.motivo|truncatechars:90 }}<span class="sub">{{ i.solicitado_por }}</span></td><td><a class="btn btn-peq" href="{% url 'ordens:detalhe' i.ordem_id %}">Gerar token</a></td>
+  {% elif chave == "acessos" %}<td>{{ i.protocolo }} — {{ i.nome_completo }}<span class="sub">{{ i.destino_nome }} · {{ i.data_acesso|date:"d/m/Y" }}</span></td><td><a class="btn btn-peq" href="{% url 'cftv:liberacoes' %}">Analisar</a></td>
+  {% elif chave == "limpezas" %}<td>{{ i.ambiente }} — {{ i.finalizado_em|date:"d/m H:i" }}<span class="sub">{{ i.asg }}</span></td><td><a class="btn btn-peq" href="{% url 'ambientes:validar' i.pk %}">Validar</a></td>{% endif %}
+</tr>{% endfor %}</table></div></div>
+{% endif %}{% empty %}{% endfor %}
+{% if not total %}<div class="card vazio">Nenhuma pendência. 🎉</div>{% endif %}
+{% endblock %}

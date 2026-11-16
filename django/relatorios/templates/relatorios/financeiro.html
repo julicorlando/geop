@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block titulo %}Financeiro{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Dashboard financeiro das ordens</h1></div>
+<form class="card filtros" method="get">{% for f in form %}<div class="campo"><label for="{{ f.id_for_label }}">{{ f.label }}</label>{{ f }}</div>{% endfor %}<div class="campo"><button>Aplicar</button></div></form>
+<div class="kpis">
+  <div class="kpi"><div class="valor">{{ custos.n }}</div><div class="rotulo">Ordens</div></div>
+  <div class="kpi"><div class="valor">R$ {{ custos.materiais|default:0|floatformat:2 }}</div><div class="rotulo">Materiais</div></div>
+  <div class="kpi"><div class="valor">R$ {{ custos.mao|default:0|floatformat:2 }}</div><div class="rotulo">Mão de obra</div></div>
+  <div class="kpi"><div class="valor">R$ {{ custos.terceiros|default:0|floatformat:2 }}</div><div class="rotulo">Terceiros</div></div>
+  <div class="kpi sucesso"><div class="valor">R$ {{ custos.total|default:0|floatformat:2 }}</div><div class="rotulo">Custo final</div></div>
+  <div class="kpi"><div class="valor">R$ {{ custos.previsto|default:0|floatformat:2 }}</div><div class="rotulo">Orçamento previsto</div></div></div>
+<div class="grade grade-2">
+  <div class="card"><h2>Evolução (12 meses)</h2>{% for e in evolucao %}<div class="barra"><span>{{ e.mes|date:"m/Y" }}</span><div class="trilho"><span style="width:{{ e.pct }}%"></span></div><strong>R$ {{ e.custo|default:0|floatformat:0 }}</strong></div>{% empty %}<p class="muted">Sem dados.</p>{% endfor %}</div>
+  <div class="card"><h2>Por categoria</h2><table><tr><th>Categoria</th><th>OS</th><th>Custo</th><th>Previsto</th></tr>{% for c in categorias %}<tr><td>{{ c.categoria__nome }}</td><td>{{ c.qtd }}</td><td>R$ {{ c.custo|default:0|floatformat:2 }}</td><td>R$ {{ c.previsto|default:0|floatformat:2 }}</td></tr>{% endfor %}</table></div>
+  <div class="card"><h2>Por local</h2><table>{% for l in locais %}<tr><td>{{ l.local__nome }}</td><td>{{ l.qtd }}</td><td>R$ {{ l.custo|default:0|floatformat:2 }}</td></tr>{% endfor %}</table></div>
+  <div class="card"><h2>Maiores custos</h2><table>{% for o in top %}<tr><td><a href="{% url 'ordens:detalhe' o.pk %}">{{ o.numero }}</a><span class="sub">{{ o.titulo|truncatechars:50 }}</span></td><td>R$ {{ o.custo_total_final|floatformat:2 }}</td></tr>{% endfor %}</table></div>
+</div>
+{% endblock %}

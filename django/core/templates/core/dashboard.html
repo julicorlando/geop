@@ -1,0 +1,52 @@
+{% extends "base.html" %}{% load geop %}
+{% block titulo %}Painel{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <h1>Olá, {{ user.get_short_name }}</h1>
+  <div class="acoes">{% if user|pode:"os.criar" %}<a class="btn" href="{% url 'ordens:nova' %}">+ Nova ordem</a>{% endif %}</div>
+</div>
+
+{% if total_abertas is not None %}
+<div class="kpis">
+  <a class="kpi" href="{% url 'ordens:lista' %}?status=abertas"><div class="valor">{{ total_abertas }}</div><div class="rotulo">Ordens em aberto</div></a>
+  <a class="kpi perigo" href="{% url 'ordens:lista' %}?status=atrasadas"><div class="valor">{{ atrasadas }}</div><div class="rotulo">Atrasadas (fora do SLA)</div></a>
+  <a class="kpi alerta" href="{% url 'ordens:lista' %}?status=CONCLUIDA_PELO_AGENTE"><div class="valor">{{ aguardando_aprovacao }}</div><div class="rotulo">Aguardando aprovação</div></a>
+  <div class="kpi sucesso"><div class="valor">{{ encerradas_30d }}</div><div class="rotulo">Encerradas em 30 dias</div></div>
+</div>
+{% endif %}
+
+{% if tokens_pendentes or exclusoes_pendentes or exclusoes_aprovadas or limpezas_pendentes %}
+<div class="card">
+  <h2>Pendências</h2>
+  <ul>
+    {% for s in tokens_pendentes %}<li>Token de reabertura solicitado para <a href="{% url 'ordens:detalhe' s.ordem_id %}">{{ s.ordem.numero }}</a> — {{ s.motivo|truncatechars:80 }}</li>{% endfor %}
+    {% if exclusoes_pendentes %}<li><a href="{% url 'ordens:exclusoes' %}">{{ exclusoes_pendentes }} solicitação(ões) de exclusão</a> aguardando análise</li>{% endif %}
+    {% if exclusoes_aprovadas %}<li><a href="{% url 'ordens:exclusoes' %}?estado=APROVADA">{{ exclusoes_aprovadas }} exclusão(ões) aprovada(s)</a> aguardando execução</li>{% endif %}
+    {% if limpezas_pendentes %}<li><a href="{% url 'ambientes:pendentes' %}">{{ limpezas_pendentes }} registro(s) de limpeza</a> aguardando validação</li>{% endif %}
+  </ul>
+</div>
+{% endif %}
+
+{% if total_abertas is not None %}
+<div class="grade grade-2">
+  <div class="card">
+    <h2>Em aberto por status</h2>
+    {% for i in por_status %}
+      <div class="barra"><a href="{% url 'ordens:lista' %}?status={{ i.status }}">{{ i.rotulo }}</a><div class="trilho"><span style="width:{{ i.pct }}%"></span></div><strong>{{ i.total }}</strong></div>
+    {% empty %}<p class="vazio">Nenhuma ordem em aberto. 🎉</p>{% endfor %}
+    <div class="chips" style="margin-top:.8rem">
+      <span class="badge badge-perigo">Crítica: {{ por_prioridade|get:"CRITICA"|default:0 }}</span>
+      <span class="badge badge-alerta">Alta: {{ por_prioridade|get:"ALTA"|default:0 }}</span>
+      <span class="badge badge-info">Média: {{ por_prioridade|get:"MEDIA"|default:0 }}</span>
+      <span class="badge badge-sucesso">Baixa: {{ por_prioridade|get:"BAIXA"|default:0 }}</span>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Urgentes e vencidas</h2>
+    {% include "ordens/_mini_lista.html" with ordens=urgentes vazio="Nada urgente no momento." %}
+  </div>
+  {% if minhas %}<div class="card"><h2>Minhas ordens</h2>{% include "ordens/_mini_lista.html" with ordens=minhas %}</div>{% endif %}
+  {% if encerramento_solicitado %}<div class="card"><h2>Encerramento solicitado</h2>{% include "ordens/_mini_lista.html" with ordens=encerramento_solicitado %}</div>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

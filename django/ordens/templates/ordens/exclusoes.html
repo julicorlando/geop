@@ -1,0 +1,26 @@
+{% extends "base.html" %}{% load geop %}
+{% block titulo %}Exclusões{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Solicitações de exclusão</h1>
+  <p class="subtitulo">Fluxo em duas etapas: um gestor solicita, outro analisa e o TI executa. Ninguém analisa a própria solicitação.</p>
+  <div class="chips" style="width:100%">{% for v, r in estados %}<a class="btn btn-peq {% if estado != v %}btn-sec{% endif %}" href="?estado={{ v }}">{{ r }}</a>{% endfor %}<a class="btn btn-peq {% if estado %}btn-sec{% endif %}" href="?estado=">Todas</a></div></div>
+<div class="card"><div class="tabela-wrap"><table>
+  <tr><th>Ordem</th><th>Motivo</th><th>Solicitante</th><th>Estado</th><th></th></tr>
+  {% for s in solicitacoes %}
+  <tr><td><a href="{% url 'ordens:detalhe' s.ordem_id %}">{{ s.ordem.numero }}</a><span class="sub">{{ s.ordem.titulo|truncatechars:50 }}</span></td>
+    <td>{{ s.motivo|truncatechars:120 }}{% if s.observacao_analise %}<span class="sub">Análise: {{ s.observacao_analise }}</span>{% endif %}</td>
+    <td>{{ s.solicitado_por }}<span class="sub">{{ s.criado_em|date:"d/m/Y H:i" }}</span></td>
+    <td>{% badge_status s "estado" %}{% if s.analisado_por %}<span class="sub">por {{ s.analisado_por }}</span>{% endif %}</td>
+    <td>
+      {% if s.estado == "PENDENTE" and user|pode:"os.excluir_analisar" and s.solicitado_por_id != user.pk %}
+      <form method="post" class="chips">{% csrf_token %}<input type="hidden" name="solicitacao_id" value="{{ s.pk }}">
+        <input type="text" name="observacao" placeholder="Parecer" style="max-width:180px">
+        <button name="acao" value="aprovar" class="btn btn-peq btn-sucesso">Aprovar</button>
+        <button name="acao" value="reprovar" class="btn btn-peq btn-perigo">Reprovar</button></form>
+      {% elif s.estado == "APROVADA" and user.is_ti %}
+      <form method="post" data-confirmar="Executar a exclusão de {{ s.ordem.numero }}?">{% csrf_token %}<input type="hidden" name="solicitacao_id" value="{{ s.pk }}"><button name="acao" value="executar" class="btn btn-peq btn-perigo">Executar exclusão</button></form>
+      {% endif %}
+    </td></tr>
+  {% empty %}<tr><td colspan="5" class="vazio">Nenhuma solicitação.</td></tr>{% endfor %}
+</table></div>{% include "core/_paginacao.html" with pagina=solicitacoes params="estado="|add:estado %}</div>
+{% endblock %}

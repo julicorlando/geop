@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block titulo %}Perfil{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>{% if perfil %}Perfil: {{ perfil.nome }}{% else %}Novo perfil{% endif %}</h1></div>
+<form method="post" class="card" novalidate>{% csrf_token %}
+  {% if form.non_field_errors %}<div class="msg msg-error">{{ form.non_field_errors }}</div>{% endif %}
+  <div class="form-grade">
+    {% for f in form %}{% if f.name != "permissoes" %}
+    <div class="campo">{% if f.field.widget.input_type == "checkbox" %}<label class="checkbox">{{ f }} {{ f.label }}</label>{% else %}<label for="{{ f.id_for_label }}">{{ f.label }}</label>{{ f }}{% endif %}
+      {% if f.help_text %}<div class="ajuda">{{ f.help_text }}</div>{% endif %}{{ f.errors }}</div>
+    {% endif %}{% endfor %}
+  </div>
+  <h2 style="margin-top:1rem">Permissões</h2>
+  {% for modulo, perms in grupos.items %}
+  <details class="painel" open><summary>{{ modulo }}</summary>
+    <div class="form-grade">{% for p in perms %}
+      <label class="checkbox"><input type="checkbox" name="permissoes" value="{{ p.pk }}" {% if p.pk in form.permissoes.value or p.pk|stringformat:"s" in form.permissoes.value %}checked{% endif %}> {{ p.nome }} <code class="muted" style="font-size:.72rem">{{ p.codigo }}</code></label>
+    {% endfor %}</div>
+  </details>
+  {% endfor %}
+  <div class="chips"><button type="submit">Salvar perfil</button><a class="btn btn-sec" href="{% url 'accounts:perfis' %}">Cancelar</a></div>
+</form>
+{% endblock %}

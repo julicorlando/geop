@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block titulo %}Assistente de abertura{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Assistente de abertura</h1><p class="subtitulo">Sugere prioridade, categoria, materiais e possíveis duplicidades, sem enviar dados para fora do GEOP. A decisão é sua.</p></div>
+<form method="post" class="card">{% csrf_token %}<div class="form-grade">
+  <div class="campo"><label>Título</label><input type="text" name="titulo" value="{{ dados.titulo }}" required></div>
+  <div class="campo"><label>Local</label><select name="local"><option value="">—</option>{% for l in locais %}<option value="{{ l.pk }}" {% if dados.local == l.pk|stringformat:"s" %}selected{% endif %}>{{ l.nome }}</option>{% endfor %}</select></div>
+  <div class="campo campo-largo"><label>Descrição</label><textarea name="descricao" rows="3">{{ dados.descricao }}</textarea></div></div><button>Analisar</button></form>
+{% if resultado %}<div class="grade grade-3">
+  <div class="card"><h2>Prioridade sugerida</h2><div class="valor" style="font-size:1.6rem;font-weight:700">{{ resultado.prioridade_sugerida }}</div></div>
+  <div class="card"><h2>Categorias</h2>{% for c in resultado.categorias_sugeridas %}<div>{{ c.nome }} <span class="muted">({{ c.score }})</span></div>{% empty %}<p class="muted">Sem sugestão.</p>{% endfor %}</div>
+  <div class="card"><h2>Materiais em estoque</h2>{% for m in resultado.materiais_sugeridos %}<div>{{ m.nome }} <span class="muted">saldo {{ m.disponivel }}</span></div>{% empty %}<p class="muted">Nenhum.</p>{% endfor %}</div>
+  <div class="card"><h2>Possíveis duplicidades</h2>{% for d in resultado.duplicidades %}<div><a href="{{ d.url }}">{{ d.numero }}</a> {{ d.titulo }} <span class="muted">({{ d.similaridade }})</span></div>{% empty %}<p class="muted">Nenhuma ordem parecida em aberto.</p>{% endfor %}</div>
+</div><a class="btn" href="{% url 'ordens:nova' %}">Abrir ordem</a>{% endif %}
+{% endblock %}

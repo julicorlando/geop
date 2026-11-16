@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block titulo %}Token de relatórios{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Franquia de relatórios</h1></div>
+<div class="grade grade-2">
+{% if cota %}<form method="post" class="card">{% csrf_token %}<input type="hidden" name="voltar" value="{{ voltar }}"><h2>Renovar com token do TI</h2>
+  <p>Disponíveis: {{ cota.restantes }} de {{ cota.limite }} emissões.</p>
+  <div class="campo"><label>Token</label><input type="text" name="token" required autocomplete="off" autofocus></div><button>Validar token</button></form>{% endif %}
+{% if user.is_ti %}<form method="post" class="card">{% csrf_token %}<input type="hidden" name="acao" value="gerar"><h2>Gerar token (TI)</h2>
+  {% if gerado %}<div class="msg msg-success" style="font-size:1.3rem;margin-bottom:.8rem">Token: <strong style="letter-spacing:.15em">{{ gerado }}</strong> (24 h, uso único)</div>{% endif %}
+  <div class="campo"><label>Para</label><select name="destinatario"><option value="">Qualquer gestor</option>{% for g in gestores %}<option value="{{ g.pk }}">{{ g.nome }}</option>{% endfor %}</select></div><button>Gerar token</button></form>{% endif %}
+</div>
+{% endblock %}

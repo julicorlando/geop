@@ -1,0 +1,18 @@
+{% load geop static %}<!doctype html><html lang="pt-br"><head><meta charset="utf-8"><title>{{ ordem.numero }}</title>
+<link rel="stylesheet" href="{% static 'css/app.css' %}">
+<style>body{background:#fff;color:#111;padding:1.5rem;max-width:900px;margin:auto}.card{box-shadow:none}.galeria{grid-template-columns:repeat(3,1fr)}.assin{display:grid;grid-template-columns:1fr 1fr;gap:3rem;margin-top:3rem}.assin div{border-top:1px solid #333;text-align:center;padding-top:.3rem;font-size:.85rem}</style>
+</head><body>
+<div class="nao-imprimir chips" style="margin-bottom:1rem"><button onclick="window.print()">Imprimir</button><a class="btn btn-sec" href="{% url 'ordens:detalhe' ordem.pk %}">Voltar</a></div>
+<h1>{{ GEOP_NOME_UNIDADE }} · {{ ordem.get_tipo_display }} {{ ordem.numero }}</h1>
+<div class="card"><h2>{{ ordem.titulo }}</h2><p style="white-space:pre-line">{{ ordem.descricao }}</p>
+<dl class="dados"><dt>Status</dt><dd>{{ ordem.get_status_display }}</dd><dt>Prioridade</dt><dd>{{ ordem.get_prioridade_display }}</dd>
+<dt>Local</dt><dd>{{ ordem.local }}</dd><dt>Categoria</dt><dd>{{ ordem.categoria }}</dd><dt>Solicitante</dt><dd>{{ ordem.solicitante }}</dd>
+<dt>Gestor</dt><dd>{{ ordem.gestor }}</dd><dt>Equipe</dt><dd>{% for a in agentes %}{{ a.usuario }} ({{ a.get_papel_display|lower }}){% if not forloop.last %}, {% endif %}{% empty %}{{ ordem.agente|default:"—" }}{% endfor %}</dd>
+<dt>Abertura</dt><dd>{{ ordem.criado_em|date:"d/m/Y H:i" }}</dd><dt>Prazo</dt><dd>{{ ordem.prazo|date:"d/m/Y H:i"|default:"—" }}</dd>
+{% if ordem.data_encerramento %}<dt>Encerramento</dt><dd>{{ ordem.data_encerramento|date:"d/m/Y H:i" }} — {{ ordem.aprovado_por }}</dd>{% endif %}</dl></div>
+{% if checklist %}<div class="card"><h2>Checklist</h2><ul>{% for i in checklist %}<li>{% if i.concluido %}☑{% else %}☐{% endif %} {{ i.descricao }}</li>{% endfor %}</ul></div>{% endif %}
+{% if materiais %}<div class="card"><h2>Materiais</h2><ul>{% for m in materiais %}<li>{{ m.nome_material }} — {{ m.quantidade|floatformat:"-2" }} {{ m.unidade }}</li>{% endfor %}</ul></div>{% endif %}
+{% if fotos %}<div class="card"><h2>Fotos</h2><div class="galeria">{% for f in fotos %}<figure class="foto" style="margin:0"><img src="{% url 'ordens:miniatura' f.pk %}" alt=""><figcaption class="legenda">{{ f.get_tipo_display }} · {{ f.criado_em|date:"d/m H:i" }}</figcaption></figure>{% endfor %}</div></div>{% endif %}
+<div class="card"><h2>Histórico</h2><ul class="linha-tempo">{% for h in historico %}<li><div class="quando">{{ h.criado_em|date:"d/m/Y H:i" }} · {{ h.usuario|default:"Sistema" }}</div>{{ h.descricao }}</li>{% endfor %}</ul></div>
+<div class="assin"><div>Responsável pela execução</div><div>Gestor / aprovação</div></div>
+</body></html>

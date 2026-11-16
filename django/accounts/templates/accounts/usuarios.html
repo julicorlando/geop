@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block titulo %}Usuários{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Usuários</h1><div class="acoes"><a class="btn" href="{% url 'accounts:usuario_novo' %}">+ Novo usuário</a></div></div>
+<form class="card filtros" method="get">
+  <div class="campo"><label>Buscar</label><input type="search" name="q" value="{{ q }}" placeholder="Nome, e-mail ou cargo"></div>
+  <div class="campo"><label>Perfil</label><select name="perfil"><option value="">Todos</option>{% for p in perfis %}<option value="{{ p.pk }}" {% if request.GET.perfil == p.pk|stringformat:"s" %}selected{% endif %}>{{ p.nome }}</option>{% endfor %}</select></div>
+  <div class="campo"><label>Situação</label><select name="ativos"><option value="1">Ativos</option><option value="0" {% if request.GET.ativos == "0" %}selected{% endif %}>Todos</option></select></div>
+  <div class="campo"><button>Filtrar</button></div>
+</form>
+<div class="card"><div class="tabela-wrap"><table>
+  <tr><th>Nome</th><th>Perfil</th><th>Setor</th><th>Último acesso</th><th></th></tr>
+  {% for u in pagina %}
+  <tr><td><strong>{{ u.nome }}</strong><span class="sub">{{ u.email }}{% if u.cargo %} · {{ u.cargo }}{% endif %}</span></td>
+    <td>{{ u.perfil|default:"—" }}{% if not u.is_active %} <span class="badge badge-neutro">inativo</span>{% endif %}{% if u.forcar_troca_senha %} <span class="badge badge-alerta">trocar senha</span>{% endif %}</td>
+    <td>{{ u.setor|default:"—" }}</td><td class="muted">{{ u.last_login|date:"d/m/Y H:i"|default:"nunca" }}</td>
+    <td><a class="btn btn-sec btn-peq" href="{% url 'accounts:usuario_editar' u.pk %}">Editar</a></td></tr>
+  {% empty %}<tr><td colspan="5" class="vazio">Nenhum usuário encontrado.</td></tr>{% endfor %}
+</table></div>{% include "core/_paginacao.html" %}</div>
+{% endblock %}

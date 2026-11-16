@@ -1,0 +1,201 @@
+{% extends "base.html" %}{% load geop %}
+{% block titulo %}{{ ordem.numero }}{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div>
+    <h1>{{ ordem.numero }} · {{ ordem.titulo }}</h1>
+    <div class="chips">{% badge_status ordem %} {% badge_prioridade ordem %}
+      <span class="badge badge-neutro">{{ ordem.get_tipo_display }}</span>
+      {% if ordem.atrasada %}<span class="badge badge-perigo">Atrasada</span>{% endif %}
+      {% if ordem.excluida_em %}<span class="badge badge-perigo">Na lixeira</span>{% endif %}
+      {% if ordem.reabertura_contagem %}<span class="badge badge-alerta">Reaberta {{ ordem.reabertura_contagem }}×</span>{% endif %}
+    </div>
+  </div>
+  <div class="acoes nao-imprimir">
+    <a class="btn btn-sec" href="{% url 'ordens:imprimir' ordem.pk %}" target="_blank">Imprimir</a>
+    {% if user|pode:"custos.gerenciar" %}<a class="btn btn-sec" href="{% url 'estoque:custos' ordem.pk %}">Custos</a>{% endif %}
+    {% for w in whatsapp %}<a class="btn btn-sec" href="{{ w.url }}" target="_blank" rel="noopener">WhatsApp: {{ w.rotulo }}</a>{% endfor %}
+    {% if gerenciar %}<button class="btn btn-sec" type="button" onclick="navigator.clipboard.writeText(location.origin + '{{ ordem.url_publica }}').then(()=>alert('Link público copiado. Envie ao agente/terceiro.'))">Copiar link público</button>{% endif %}
+  </div>
+</div>
+
+{% if ordem.excluida_em %}
+<div class="msg msg-error" style="margin-bottom:1rem">Excluída em {{ ordem.excluida_em|date:"d/m/Y H:i" }} por {{ ordem.excluida_por }}.
+  {% if user.is_ti %}<form method="post" style="display:inline">{% csrf_token %}<input type="hidden" name="acao" value="restaurar"><button class="btn btn-peq">Restaurar</button></form>{% endif %}</div>
+{% endif %}
+{% if ordem.solicitacao_encerramento and not ordem.encerrada %}
+<div class="msg msg-warning" style="margin-bottom:1rem"><strong>Encerramento solicitado</strong> em {{ ordem.solicitacao_encerramento_em|date:"d/m/Y H:i" }}: {{ ordem.solicitacao_encerramento_obs }}</div>
+{% endif %}
+{% if token_gerado %}
+<div class="msg msg-success" style="margin-bottom:1rem;font-size:1.1rem">Token de reabertura: <strong style="font-size:1.5rem;letter-spacing:.2em">{{ token_gerado }}</strong> — válido por 24 h e exibido apenas agora.</div>
+{% endif %}
+
+<div class="detalhe-layout">
+  <div>
+    <div class="card">
+      <h2>Descrição</h2>
+      <p style="white-space:pre-line;margin-top:0">{{ ordem.descricao }}</p>
+      <dl class="dados">
+        <dt>Local</dt><dd>{{ ordem.local }}</dd>
+        <dt>Categoria</dt><dd>{{ ordem.categoria }}</dd>
+        <dt>Solicitante</dt><dd>{{ ordem.solicitante }}</dd>
+        <dt>Gestor</dt><dd>{{ ordem.gestor }}</dd>
+        <dt>Responsável</dt><dd>{{ ordem.agente|default:"—" }}{% for a in agentes %}{% if a.papel == "AUXILIAR" %}<span class="badge badge-neutro">aux: {{ a.usuario }}</span> {% endif %}{% endfor %}</dd>
+        <dt>Aberta em</dt><dd>{{ ordem.criado_em|date:"d/m/Y H:i" }}</dd>
+        <dt>Prazo (SLA {{ ordem.sla_horas|default:"—" }} h)</dt><dd>{{ ordem.prazo|date:"d/m/Y H:i"|default:"—" }}</dd>
+        {% if ordem.data_inicio %}<dt>Início</dt><dd>{{ ordem.data_inicio|date:"d/m/Y H:i" }}</dd>{% endif %}
+        {% if ordem.data_conclusao %}<dt>Conclusão</dt><dd>{{ ordem.data_conclusao|date:"d/m/Y H:i" }}</dd>{% endif %}
+        {% if ordem.data_encerramento %}<dt>Encerrada</dt><dd>{{ ordem.data_encerramento|date:"d/m/Y H:i" }} por {{ ordem.aprovado_por }}{% if ordem.observacao_aprovacao %} — {{ ordem.observacao_aprovacao }}{% endif %}</dd>{% endif %}
+        {% if ordem.valor_previsto_orcamento %}<dt>Orçamento previsto</dt><dd>R$ {{ ordem.valor_previsto_orcamento|floatformat:2 }}</dd>{% endif %}
+        {% if ordem.custo_materiais %}<dt>Custo de materiais</dt><dd>R$ {{ ordem.custo_materiais|floatformat:2 }}</dd>{% endif %}
+        {% if ordem.custo_total_final %}<dt>Custo total</dt><dd>R$ {{ ordem.custo_total_final|floatformat:2 }}</dd>{% endif %}
+        {% if ordem.preventiva %}<dt>Preventiva</dt><dd>{{ ordem.preventiva }}</dd>{% endif %}
+        <dt>Qualidade</dt><dd><span class="badge {% if qualidade.0 >= 80 %}badge-sucesso{% elif qualidade.0 >= 50 %}badge-alerta{% else %}badge-perigo{% endif %}">{{ qualidade.0 }}%</span>
+          <details style="display:inline"><summary class="muted" style="display:inline;cursor:pointer"> ver critérios</summary><ul>{% for c in qualidade.1 %}<li>{% if c.ok %}✅{% else %}⬜{% endif %} {{ c.rotulo }}</li>{% endfor %}</ul></details></dd>
+      </dl>
+    </div>
+
+    {% if equipe_limpeza %}
+    <div class="card"><h2>Equipe de limpeza</h2><div class="chips">
+      {% for p in equipe_limpeza %}<span class="badge {% if p.papel == 'SUPERVISOR' %}badge-escuro{% elif p.principal %}badge-primario{% else %}badge-neutro{% endif %}">{{ p.membro.nome_colaborador }} · {% if p.papel == 'SUPERVISOR' %}supervisor{% elif p.principal %}principal{% else %}ASG{% endif %}</span>{% endfor %}
+    </div></div>
+    {% endif %}
+
+    {% if checklist %}
+    <div class="card"><h2>Checklist</h2>
+      {% for item in checklist %}
+      <form method="post" class="chips" style="align-items:center;border-bottom:1px solid var(--border);padding:.45rem 0">{% csrf_token %}
+        <input type="hidden" name="acao" value="checklist"><input type="hidden" name="item_id" value="{{ item.pk }}">
+        <input type="hidden" name="concluido" value="{% if item.concluido %}0{% else %}1{% endif %}">
+        <span style="flex:1">{% if item.concluido %}✅{% else %}⬜{% endif %} {{ item.descricao }}{% if item.exige_foto %} <span class="badge badge-info">exige foto</span>{% endif %}
+          {% if item.concluido %}<span class="sub">por {{ item.concluido_por }} em {{ item.concluido_em|date:"d/m H:i" }}{% if item.observacao %} — {{ item.observacao }}{% endif %}</span>{% endif %}</span>
+        {% if atualizar and not ordem.encerrada %}
+          {% if not item.concluido %}<input type="text" name="observacao" placeholder="Observação" style="max-width:220px">{% endif %}
+          <button class="btn btn-peq {% if item.concluido %}btn-sec{% endif %}">{% if item.concluido %}Reabrir{% else %}Concluir{% endif %}</button>
+        {% endif %}
+      </form>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <div class="card-titulo"><h2>Fotos</h2></div>
+      {% for tipo, fotos in fotos_por_tipo %}{% if fotos %}
+        <h3>{{ tipo.label }} <span class="muted">({{ fotos|length }})</span></h3>
+        {% include "ordens/_galeria.html" with fotos=fotos %}
+      {% endif %}{% endfor %}
+      {% if documentos %}<h3 style="margin-top:1rem">Documentos</h3><ul>{% for d in documentos %}
+        <li><a href="{% url 'ordens:arquivo' d.pk %}" target="_blank">{{ d.nome_original|default:"documento" }}</a> <span class="muted">· {{ d.tamanho|tamanho }} · {{ d.criado_em|date:"d/m H:i" }}</span>
+          {% if gerenciar or d.usuario_id == user.pk and not ordem.encerrada %}<form method="post" style="display:inline" data-confirmar="Apagar este documento?">{% csrf_token %}<input type="hidden" name="acao" value="excluir_anexo"><input type="hidden" name="anexo_id" value="{{ d.pk }}"><button class="btn-link">apagar</button></form>{% endif %}</li>
+      {% endfor %}</ul>{% endif %}
+      {% if atualizar and not ordem.excluida_em %}{% if not ordem.encerrada or user.is_ti %}
+      <details class="painel nao-imprimir" style="margin-top:1rem"><summary>Enviar fotos ou documentos</summary>
+        <form method="post" enctype="multipart/form-data">{% csrf_token %}<input type="hidden" name="acao" value="anexo">
+          {% include "core/_campos.html" with form=anexo_form %}
+          <p class="ajuda">Imagens são reduzidas automaticamente para no máximo {{ GEOP_LADO_MAX }} px e convertidas para um formato leve, sem perder a nitidez. PDFs são guardados como estão.</p>
+          <button>Enviar</button></form>
+      </details>
+      {% endif %}{% endif %}
+    </div>
+
+    <div class="card"><h2>Materiais</h2>
+      <div class="tabela-wrap"><table>
+        <tr><th>Material</th><th>Qtd.</th><th>Custo</th><th>Registrado</th></tr>
+        {% for m in materiais %}<tr><td>{{ m.nome_material }}{% if m.situacao != "CONSUMIDO" and m.situacao != "AVULSO" %} <span class="badge badge-alerta">{{ m.get_situacao_display|lower }}</span>{% endif %}{% if m.observacao %}<span class="sub">{{ m.observacao }}</span>{% endif %}</td><td>{{ m.quantidade|floatformat:"-2" }} {{ m.unidade }}</td>
+          <td>{% if m.custo_unitario %}R$ {{ m.custo_total|floatformat:2 }}{% else %}—{% endif %}</td><td class="muted">{{ m.usuario|default:"" }} {{ m.criado_em|date:"d/m H:i" }}</td></tr>
+        {% empty %}<tr><td colspan="4" class="vazio">Nenhum material registrado.</td></tr>{% endfor %}
+      </table></div>
+      {% for r in reservas %}<form method="post" class="chips" style="align-items:center;margin-top:.4rem">{% csrf_token %}<input type="hidden" name="reserva_id" value="{{ r.pk }}">
+        <span style="flex:1">{{ r.material.nome }} — {{ r.quantidade|floatformat:"-2" }} · <strong>{{ r.get_status_display }}</strong></span>
+        {% if atualizar and r.status == "RESERVADA" %}<button name="acao" value="consumir_reserva" class="btn btn-peq">Dar baixa</button>{% endif %}
+        {% if atualizar and r.status == "RESERVADA" or atualizar and r.status == "APROVACAO_NEGATIVO" %}<button name="acao" value="cancelar_reserva" class="btn btn-sec btn-peq">Cancelar</button>{% endif %}</form>{% endfor %}
+      {% if atualizar and not ordem.encerrada and not ordem.excluida_em %}
+      <details class="painel nao-imprimir" style="margin-top:.8rem"><summary>Registrar material</summary>
+        <form method="post">{% csrf_token %}<input type="hidden" name="acao" value="material">{% include "core/_campos.html" with form=material_form %}<button>Registrar</button></form>
+      </details>{% endif %}
+    </div>
+
+    {% if patrimonios or pode_patrimonio %}
+    <div class="card"><h2>Patrimônio</h2>
+      {% for p in patrimonios %}
+        <div class="chips" style="align-items:center;border-bottom:1px solid var(--border);padding:.4rem 0">
+          <span style="flex:1"><strong>{{ p.numero_patrimonio }}</strong> {{ p.descricao }} <span class="muted">{{ p.marca }} {{ p.modelo }} {% if p.serie %}· série {{ p.serie }}{% endif %}</span> <span class="badge badge-neutro">{{ p.origem|lower }}</span></span>
+          {% if pode_patrimonio %}<form method="post">{% csrf_token %}<input type="hidden" name="acao" value="desvincular_patrimonio"><input type="hidden" name="patrimonio_id" value="{{ p.pk }}"><button class="btn btn-sec btn-peq">Desvincular</button></form>{% endif %}
+        </div>
+      {% endfor %}
+      {% if pode_patrimonio %}
+      <form method="post" class="filtros nao-imprimir" style="margin-top:.6rem">{% csrf_token %}<input type="hidden" name="acao" value="vincular_patrimonio">
+        <div class="campo"><label>Código / nº patrimônio</label><input type="text" name="codigo" required inputmode="text" autocomplete="off"></div>
+        <div class="campo"><label>Descrição (se não houver no cadastro)</label><input type="text" name="descricao"></div>
+        <div class="campo"><button>Vincular</button></div></form>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  <div>
+    {% if status_form and not ordem.excluida_em %}
+    <div class="card"><h2>Atualizar status</h2>
+      {% if pendencias %}<div class="msg msg-warning" style="margin-bottom:.8rem">Para encerrar falta: {{ pendencias|join:", " }}.</div>{% endif %}
+      <form method="post">{% csrf_token %}<input type="hidden" name="acao" value="status">
+        <div class="campo"><label for="id_status">Novo status</label>{{ status_form.status }}</div>
+        <div class="campo"><label for="id_obs">Observação</label>{{ status_form.obs }}<div class="ajuda">Obrigatória para reprovar.</div></div>
+        {% if gerenciar %}<div class="campo"><label for="id_custo_materiais">{{ status_form.custo_materiais.label }}</label>{{ status_form.custo_materiais }}<div class="ajuda">{{ status_form.custo_materiais.help_text }}</div></div>{% endif %}
+        <button>Aplicar</button></form>
+    </div>
+    {% endif %}
+
+    {% if atribuir_form and not ordem.excluida_em %}
+    <details class="card painel"><summary>Responsáveis</summary>
+      <form method="post">{% csrf_token %}<input type="hidden" name="acao" value="atribuir">{% include "core/_campos.html" with form=atribuir_form %}<button>Salvar responsáveis</button></form>
+    </details>
+    {% endif %}
+
+    {% if editar_form and not ordem.excluida_em %}
+    <details class="card painel"><summary>Editar dados</summary>
+      <form method="post">{% csrf_token %}<input type="hidden" name="acao" value="editar">{% include "core/_campos.html" with form=editar_form %}<button>Salvar alterações</button></form>
+    </details>
+    {% endif %}
+
+    {% if ordem.encerrada and not ordem.excluida_em %}
+    <div class="card"><h2>Reabertura</h2>
+      {% if user.is_ti %}
+        {% if solicitacao_token %}<p>Solicitado por <strong>{{ solicitacao_token.solicitado_por }}</strong>: {{ solicitacao_token.motivo }}</p>{% endif %}
+        <form method="post" data-confirmar="Gerar um novo token invalida os anteriores. Continuar?">{% csrf_token %}<input type="hidden" name="acao" value="gerar_token"><button>Gerar token de reabertura</button></form>
+      {% elif user|pode:"os.reabrir" %}
+        {% if solicitacao_token %}<p class="muted">Solicitação enviada ao TI em {{ solicitacao_token.criado_em|date:"d/m H:i" }}.</p>
+        {% else %}<form method="post">{% csrf_token %}<input type="hidden" name="acao" value="solicitar_token">
+          <div class="campo"><label>Motivo</label><textarea name="motivo" rows="2" required></textarea></div><button class="btn btn-sec">Solicitar token ao TI</button></form>{% endif %}
+      {% endif %}
+      {% if atualizar or gerenciar %}
+      <form method="post" style="margin-top:1rem">{% csrf_token %}<input type="hidden" name="acao" value="reabrir">
+        <div class="campo"><label>Token (6 dígitos)</label><input type="text" name="token" inputmode="numeric" maxlength="6" autocomplete="one-time-code" required></div>
+        <div class="campo"><label>Observação</label><input type="text" name="obs"></div><button>Reabrir ordem</button></form>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if not ordem.excluida_em %}{% if user.is_ti or user|pode:"os.excluir_solicitar" %}
+    <details class="card painel"><summary>Excluir ordem</summary>
+      {% if exclusao_ativa %}<p>Solicitação {{ exclusao_ativa.get_estado_display|lower }} por {{ exclusao_ativa.solicitado_por }} — {{ exclusao_ativa.motivo }}</p>
+      {% else %}
+      <form method="post" data-confirmar="{% if user.is_ti %}A ordem irá para a lixeira. Continuar?{% else %}Enviar solicitação de exclusão?{% endif %}">{% csrf_token %}<input type="hidden" name="acao" value="excluir">
+        <div class="campo"><label>Motivo</label><textarea name="motivo" rows="2" required></textarea></div>
+        <button class="btn btn-perigo">{% if user.is_ti %}Mover para a lixeira{% else %}Solicitar exclusão{% endif %}</button>
+        <p class="ajuda">{% if user.is_ti %}Pode ser restaurada depois.{% else %}Precisa da aprovação de outro gestor e da execução pelo TI.{% endif %}</p></form>
+      {% endif %}
+    </details>
+    {% endif %}{% endif %}
+
+    {% if sugestoes %}<div class="card"><h2>Soluções parecidas</h2><ul>{% for a in sugestoes %}<li><a href="{{ a.get_absolute_url }}" target="_blank">{{ a.titulo }}</a></li>{% endfor %}</ul></div>{% endif %}
+
+    <div class="card"><h2>Histórico</h2>
+      <ul class="linha-tempo">
+        {% for h in historico %}<li><div class="quando">{{ h.criado_em|date:"d/m/Y H:i" }} · {{ h.usuario|default:"Sistema / link público" }}</div>
+          {% if h.status_anterior != h.status_novo and h.status_novo %}<strong>{{ h.status_anterior|rotulo_status }} → {{ h.status_novo|rotulo_status }}</strong><br>{% endif %}{{ h.descricao }}</li>
+        {% empty %}<li>Sem registros.</li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

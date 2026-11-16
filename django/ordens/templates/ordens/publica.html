@@ -1,0 +1,29 @@
+{% extends "base_publico.html" %}{% load geop %}
+{% block titulo %}{{ ordem.numero }}{% endblock %}
+{% block conteudo %}
+<div class="card">
+  <h1>{{ ordem.numero }}</h1>
+  <p style="font-size:1.05rem;margin:.2rem 0 .6rem"><strong>{{ ordem.titulo }}</strong></p>
+  <div class="chips">{% badge_status ordem %} {% badge_prioridade ordem %}</div>
+  <p style="white-space:pre-line">{{ ordem.descricao }}</p>
+  <dl class="dados"><dt>Local</dt><dd>{{ ordem.local }}</dd><dt>Prazo</dt><dd>{{ ordem.prazo|date:"d/m/Y H:i"|default:"—" }}</dd>
+    <dt>Gestor</dt><dd>{{ ordem.gestor }}</dd>
+    <dt>Equipe</dt><dd>{% for a in agentes %}{{ a.usuario }}{% if not forloop.last %}, {% endif %}{% empty %}{{ ordem.agente|default:"—" }}{% endfor %}</dd></dl>
+</div>
+{% if not ordem.encerrada %}
+<div class="card"><h2>Enviar fotos do serviço</h2>
+  <form method="post" enctype="multipart/form-data">{% csrf_token %}<input type="hidden" name="acao" value="fotos">
+    <div class="campo"><input type="file" name="fotos" accept="image/*" multiple required data-comprimir="1"><div class="ajuda">As fotos são reduzidas no próprio celular antes do envio (mais rápido e econômico).</div></div>
+    <div class="campo"><label>Descrição</label><input type="text" name="descricao" maxlength="500" placeholder="Ex.: troca da lâmpada concluída"></div>
+    <button>Enviar fotos</button></form>
+</div>
+<div class="card"><h2>Solicitar encerramento</h2>
+  {% if ordem.solicitacao_encerramento %}<p class="msg msg-success">Encerramento já solicitado em {{ ordem.solicitacao_encerramento_em|date:"d/m/Y H:i" }}. Você pode enviar novamente se precisar complementar.</p>{% endif %}
+  <form method="post">{% csrf_token %}<input type="hidden" name="acao" value="solicitar_encerramento">
+    <div class="campo"><label>O que foi feito?</label><textarea name="observacao" rows="3" required></textarea></div>
+    <button class="btn btn-sucesso">Solicitar encerramento</button></form>
+</div>
+{% else %}<div class="msg msg-info">Esta ordem está encerrada.</div>{% endif %}
+{% if fotos %}<div class="card"><h2>Fotos ({{ fotos|length }})</h2>{% include "ordens/_galeria.html" with publico=True %}</div>{% endif %}
+<div class="card"><h2>Histórico</h2><ul class="linha-tempo">{% for h in historico %}<li><div class="quando">{{ h.criado_em|date:"d/m/Y H:i" }}</div>{{ h.descricao }}</li>{% endfor %}</ul></div>
+{% endblock %}

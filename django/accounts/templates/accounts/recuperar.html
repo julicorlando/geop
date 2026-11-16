@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% block titulo %}Recuperar senha{% endblock %}
+{% block corpo %}<div class="login-wrap"><form method="post" class="card login-card">{% csrf_token %}<h1>Recuperar senha</h1>
+  <p class="muted">Informe seu e-mail. Se ele estiver cadastrado, você receberá um link para criar uma nova senha.</p>
+  {% include "core/_campos.html" %}<button style="width:100%">Enviar link</button><p class="ajuda" style="text-align:center"><a href="{% url 'accounts:login' %}">Voltar</a></p></form></div>{% endblock %}

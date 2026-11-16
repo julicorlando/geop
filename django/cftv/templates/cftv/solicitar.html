@@ -1,0 +1,10 @@
+{% extends "base_publico.html" %}
+{% block titulo %}Solicitar acesso{% endblock %}
+{% block conteudo %}
+<div class="card"><h1>{{ link.titulo }}</h1><p class="muted">Preencha os dados. Você receberá um protocolo e, após a aprovação, um QR Code para apresentar na portaria.</p></div>
+<form method="post" class="card" novalidate>{% csrf_token %}
+  <datalist id="destinos">{% for d in destinos %}<option value="{{ d.nome }}">{% endfor %}</datalist>
+  {% include "core/_campos.html" %}<button>Enviar solicitação</button></form>
+<p style="text-align:center"><a href="{% url 'cftv:consultar' %}">Já enviei — acompanhar pelo protocolo</a></p>
+<script>document.getElementById("id_destino_nome").setAttribute("list","destinos");</script>
+{% endblock %}

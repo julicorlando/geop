@@ -1,0 +1,19 @@
+{% extends "base.html" %}{% load geop %}
+{% block titulo %}{{ artigo.titulo }}{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div><h1>{{ artigo.titulo }}</h1><div class="chips">{% badge_status artigo %}<span class="badge badge-neutro">{{ artigo.categoria|default:"Geral" }}</span><span class="badge badge-neutro">v{{ artigo.versao }}</span></div></div>
+  <div class="acoes">{% if user|pode:"conhecimento.gerenciar" %}<a class="btn btn-sec" href="{% url 'conhecimento:editar' artigo.pk %}">Editar</a>{% endif %}</div></div>
+<div class="detalhe-layout"><div>
+  {% if artigo.problema %}<div class="card"><h2>Problema</h2><p style="white-space:pre-line">{{ artigo.problema }}</p></div>{% endif %}
+  <div class="card"><h2>Solução / procedimento</h2><p style="white-space:pre-line">{{ artigo.conteudo }}</p>
+    {% if links %}<h3>Links</h3><ul>{% for l in links %}<li><a href="{{ l }}" target="_blank" rel="noopener">{{ l }}</a></li>{% endfor %}</ul>{% endif %}</div>
+</div><div>
+  <div class="card"><dl class="dados"><dt>Responsável</dt><dd>{{ artigo.responsavel|default:"—" }}</dd><dt>Atualizado</dt><dd>{{ artigo.atualizado_em|date:"d/m/Y" }}</dd>
+    {% if artigo.revisar_em %}<dt>Revisar em</dt><dd>{{ artigo.revisar_em|date:"d/m/Y" }}</dd>{% endif %}
+    {% if artigo.origem_ordem %}<dt>Origem</dt><dd><a href="{% url 'ordens:detalhe' artigo.origem_ordem_id %}">{{ artigo.origem_ordem.numero }}</a></dd>{% endif %}</dl></div>
+  <form method="post" class="card">{% csrf_token %}<h2>Este artigo ajudou?</h2>
+    <div class="campo"><input type="text" name="comentario" placeholder="Comentário (opcional)" value="{{ minha.comentario|default:'' }}"></div>
+    <div class="chips"><button name="util" value="1" class="btn btn-sucesso">👍 Sim</button><button name="util" value="0" class="btn btn-sec">👎 Não</button></div>
+    {% if minha %}<p class="ajuda">Você avaliou como {% if minha.util %}útil{% else %}não útil{% endif %}.</p>{% endif %}</form>
+</div></div>
+{% endblock %}

@@ -1,0 +1,1 @@
+{% for l in linhas %}<div class="barra"><span>{{ l.rotulo }}</span><div class="trilho"><span style="width:{{ l.pct }}%"></span></div><strong>{{ l.total }}</strong></div>{% empty %}<p class="muted">Sem dados.</p>{% endfor %}

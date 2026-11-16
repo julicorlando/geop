@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block titulo %}Reincidências{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Reincidências e custo acumulado</h1>
+  <form class="acoes" method="get"><select name="dias" onchange="this.form.submit()">{% for d in opcoes %}<option value="{{ d }}" {% if d == dias %}selected{% endif %}>Últimos {{ d }} dias</option>{% endfor %}</select></form>
+  <p class="subtitulo">Locais/categorias com 3+ ordens e patrimônios com 2+ ordens no período — candidatos a troca, reforma ou preventiva.</p></div>
+<div class="card"><h2>Local + categoria</h2><div class="tabela-wrap"><table><tr><th>Local</th><th>Categoria</th><th>Ocorrências</th><th>Custo</th><th>Última</th></tr>
+  {% for r in locais %}<tr><td>{{ r.local__nome }}</td><td>{{ r.categoria__nome }}</td><td><span class="badge {% if r.ocorrencias >= 6 %}badge-perigo{% elif r.ocorrencias >= 4 %}badge-alerta{% else %}badge-neutro{% endif %}">{{ r.ocorrencias }}</span></td><td>R$ {{ r.custo|default:0|floatformat:2 }}</td><td>{{ r.ultima|date:"d/m/Y" }}</td></tr>
+  {% empty %}<tr><td colspan="5" class="vazio">Nenhuma reincidência.</td></tr>{% endfor %}</table></div></div>
+<div class="card"><h2>Patrimônios</h2><div class="tabela-wrap"><table><tr><th>Patrimônio</th><th>Ocorrências</th><th>Custo</th></tr>
+  {% for p in patrimonios %}<tr><td><a href="{% url 'patrimonio:consultar' %}?codigo={{ p.numero_patrimonio|urlencode }}">{{ p.numero_patrimonio }}</a><span class="sub">{{ p.descricao }}</span></td><td>{{ p.ocorrencias }}</td><td>R$ {{ p.custo|default:0|floatformat:2 }}</td></tr>
+  {% empty %}<tr><td colspan="3" class="vazio">Nenhum patrimônio reincidente.</td></tr>{% endfor %}</table></div></div>
+{% endblock %}
