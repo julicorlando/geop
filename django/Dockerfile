@@ -3,7 +3,9 @@ FROM python:3.13-slim
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
 WORKDIR /app
 
-# libwebp/libjpeg já vêm nas wheels do Pillow; nada extra a instalar.
+# libwebp/libjpeg já vêm nas wheels do Pillow. postgresql-client fornece o pg_dump usado por backup_banco.
+RUN apt-get update && apt-get install -y --no-install-recommends postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
