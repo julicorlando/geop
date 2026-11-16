@@ -35,6 +35,7 @@ class OrdemForm(forms.Form):
     gestor = forms.ModelChoiceField(label="Gestor responsável", required=False, queryset=Usuario.objects.none(),
                                     help_text="Somente TI: abrir a ordem em nome de um gestor.")
     fotos = MultiplosArquivosField(label="Fotos da abertura")
+    ignorar_duplicidade = forms.BooleanField(label="Não é duplicada: abrir mesmo assim", required=False)
     # Ordem de limpeza (OL)
     tarefas = forms.ModelMultipleChoiceField(label="Checklist do plano de limpeza", required=False,
                                              queryset=PlanoTarefa.objects.filter(ativo=True, grupo__ativo=True)
@@ -106,12 +107,27 @@ class AnexoForm(forms.Form):
 
 
 class MaterialForm(forms.Form):
-    nome_material = forms.CharField(label="Material", max_length=150)
+    material_estoque = forms.ModelChoiceField(label="Material do estoque", required=False, queryset=None,
+                                              empty_label="— fora do estoque —")
+    reservar = forms.BooleanField(label="Só reservar (baixa no encerramento)", required=False)
+    nome_material = forms.CharField(label="Material (fora do estoque)", max_length=150, required=False)
     quantidade = forms.DecimalField(label="Quantidade", max_digits=10, decimal_places=2, min_value=0.01)
     unidade = forms.CharField(label="Unidade", max_length=30, required=False)
     custo_unitario = forms.DecimalField(label="Custo unitário (R$)", required=False, max_digits=12, decimal_places=2,
                                         min_value=0)
     observacao = forms.CharField(label="Observação", required=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from estoque.models import MaterialEstoque
+
+        self.fields["material_estoque"].queryset = MaterialEstoque.objects.filter(ativo=True)
+
+    def clean(self):
+        dados = super().clean()
+        if not dados.get("material_estoque") and not dados.get("nome_material"):
+            raise forms.ValidationError("Escolha um material do estoque ou digite o nome.")
+        return dados
 
 
 class FiltroOrdensForm(forms.Form):

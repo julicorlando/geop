@@ -4,12 +4,11 @@ from __future__ import annotations
 import hmac
 import secrets
 from datetime import timedelta
-from decimal import Decimal
 
 from django.conf import settings
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
-from django.db.models import F, Sum
+from django.db.models import F
 from django.urls import reverse
 from django.utils import timezone
 
@@ -54,6 +53,59 @@ def historico(ordem, usuario, descricao, anterior=None, novo=None):
         status_novo=novo if novo is not None else ordem.status,
         descricao=descricao,
     )
+
+
+def registrar_tempo_status(ordem, novo_status, usuario=None):
+    from operacao.models import StatusTempo
+
+    agora = timezone.now()
+    for aberto in StatusTempo.objects.filter(ordem=ordem, finalizado_em__isnull=True):
+        aberto.finalizado_em = agora
+        aberto.segundos = int((agora - aberto.iniciado_em).total_seconds())
+        aberto.save(update_fields=["finalizado_em", "segundos"])
+    StatusTempo.objects.create(ordem=ordem, status=novo_status, iniciado_em=agora,
+                               usuario=usuario if getattr(usuario, "is_authenticated", False) else None)
+
+
+def calcular_qualidade(ordem, salvar=True):
+    """Pontuação de qualidade da OS (regra de geop_v8_quality do PHP)."""
+    tipos = set(ordem.anexos.values_list("tipo", flat=True))
+    pendentes = ordem.checklist.filter(obrigatorio=True, concluido=False).count()
+    conclusao = (ordem.observacao_aprovacao or ordem.solicitacao_encerramento_obs or "").strip()
+    itens = [
+        ("Descrição detalhada", len((ordem.descricao or "").strip()) >= 20, 12),
+        ("Responsável definido", bool(ordem.agente_id), 10),
+        ("Foto antes", "FOTO_ANTES" in tipos, 10),
+        ("Foto depois", "FOTO_DEPOIS" in tipos, 15),
+        ("Checklist obrigatório concluído", pendentes == 0, 15),
+        ("Materiais/custos conferidos", True, 8),
+        ("Resultado da conclusão registrado", len(conclusao) >= 5, 12),
+        ("Prazo/SLA definido", bool(ordem.prazo), 8),
+        ("Patrimônio vinculado", ordem.patrimonios.filter(ativo=True).exists(), 10),
+    ]
+    maximo = sum(p for _, _, p in itens)
+    pct = round(sum(p for _, ok, p in itens if ok) * 100 / maximo)
+    if salvar and ordem.qualidade_percentual != pct:
+        type(ordem).objects.filter(pk=ordem.pk).update(qualidade_percentual=pct)
+        ordem.qualidade_percentual = pct
+    return pct, [{"rotulo": r, "ok": ok, "peso": p} for r, ok, p in itens]
+
+
+def carga_ativa(usuario):
+    return Ordem.objects.ativas().filter(agente=usuario).exclude(
+        status__in=[Status.ENCERRADA, Status.CONCLUIDA_PELO_AGENTE, Status.REPROVADA]).count()
+
+
+def verificar_capacidade(agente):
+    """Agente indisponível (férias, ausente, afastado) ou com a carga máxima não recebe novas ordens."""
+    from operacao.models import EquipeEstado
+
+    estado = EquipeEstado.objects.filter(usuario=agente).first()
+    if estado and estado.estado in EquipeEstado.INDISPONIVEIS:
+        raise RegraNegocio(f"{agente.nome} está {estado.get_estado_display().lower()} e não pode receber ordens.")
+    capacidade = estado.capacidade_maxima if estado else 5
+    if carga_ativa(agente) >= capacidade:
+        raise RegraNegocio(f"{agente.nome} atingiu a capacidade máxima de {capacidade} ordens ativas.")
 
 
 def url_ordem(ordem):
@@ -160,14 +212,30 @@ def excluir_anexo(ordem, user, anexo, request=None):
 
 # --------------------------------------------------------------------- criação
 
-def criar_ordem(user, dados, *, fotos=(), tarefas=(), itens_livres=(), equipe=None, request=None):
-    if not user.pode("os.criar"):
+def criar_ordem_sistema(dados):
+    """Ordem aberta por rotina automática (preventiva, IoT, rede). O solicitante é o gestor indicado ou o TI."""
+    from django.contrib.auth import get_user_model
+
+    Usuario = get_user_model()
+    responsavel = dados.get("gestor") or Usuario.objects.filter(is_active=True, perfil__codigo="TI").order_by("pk").first() \
+        or Usuario.objects.filter(is_active=True, is_superuser=True).order_by("pk").first()
+    if responsavel is None:
+        raise RegraNegocio("Cadastre ao menos um usuário TI ativo para receber as ordens automáticas.")
+    dados = {**dados, "gestor": responsavel, "ignorar_capacidade": True}
+    return criar_ordem(responsavel, dados, verificar_permissao=False)
+
+
+def criar_ordem(user, dados, *, fotos=(), tarefas=(), itens_livres=(), equipe=None, request=None,
+                verificar_permissao=True):
+    if verificar_permissao and not user.pode("os.criar"):
         raise PermissionDenied("Seu perfil não pode abrir ordens.")
     categoria = dados["categoria"]
     tipo = Ordem.Tipo.OL if categoria.eh_limpeza else Ordem.Tipo.OS
     prioridade = dados["prioridade"]
     agente = dados.get("agente")
     gestor = dados.get("gestor") or user
+    if agente and not user.is_ti and not dados.get("ignorar_capacidade"):
+        verificar_capacidade(agente)
     with transaction.atomic():
         ordem = Ordem.objects.create(
             numero=gerar_numero(tipo),
@@ -185,7 +253,10 @@ def criar_ordem(user, dados, *, fotos=(), tarefas=(), itens_livres=(), equipe=No
             sla_horas=sla_horas(prioridade),
             valor_previsto_orcamento=dados.get("valor_previsto_orcamento"),
             origem=dados.get("origem", "MANUAL"),
+            preventiva=dados.get("preventiva"),
+            duplicidade_referencia=dados.get("duplicidade_referencia"),
         )
+        registrar_tempo_status(ordem, ordem.status, user)
         if agente:
             OrdemAgente.objects.create(ordem=ordem, usuario=agente, papel=OrdemAgente.Papel.PRINCIPAL, criado_por=user)
         for aux in dados.get("auxiliares") or []:
@@ -193,6 +264,7 @@ def criar_ordem(user, dados, *, fotos=(), tarefas=(), itens_livres=(), equipe=No
                 OrdemAgente.objects.get_or_create(ordem=ordem, usuario=aux,
                                                   defaults={"papel": OrdemAgente.Papel.AUXILIAR, "criado_por": user})
         salvar_checklist(ordem, tarefas, itens_livres)
+        instanciar_checklist_categoria(ordem)
         if tipo == Ordem.Tipo.OL and equipe:
             salvar_equipe_limpeza(ordem, **equipe)
         anexos = salvar_arquivos(ordem, user, fotos, tipo=Anexo.Tipo.FOTO_ANTES,
@@ -219,6 +291,21 @@ def salvar_checklist(ordem, tarefas, itens_livres):
         if texto:
             ChecklistItem.objects.create(ordem=ordem, descricao=texto[:255], posicao=posicao)
             posicao += 1
+
+
+def instanciar_checklist_categoria(ordem):
+    """Copia o checklist ativo da categoria para a ordem (snapshot, preserva o histórico)."""
+    from .models import ChecklistModelo
+
+    modelo = ChecklistModelo.objects.filter(categoria=ordem.categoria, ativo=True).order_by("-id").first()
+    if not modelo:
+        return 0
+    base = ordem.checklist.count()
+    itens = list(modelo.itens.all())
+    for i, item in enumerate(itens, start=1):
+        ChecklistItem.objects.create(ordem=ordem, modelo_item=item, descricao=item.descricao, obrigatorio=item.obrigatorio,
+                                     exige_foto=item.exige_foto, posicao=base + i)
+    return len(itens)
 
 
 def salvar_equipe_limpeza(ordem, membros=(), principal=None, supervisor=None):
@@ -268,6 +355,8 @@ def atribuir(ordem, user, agente, auxiliares=(), request=None):
     if not pode_gerenciar(user):
         raise PermissionDenied
     _bloquear_se_encerrada(ordem, user)
+    if agente and agente.pk != ordem.agente_id and not user.is_ti:
+        verificar_capacidade(agente)
     anterior = ordem.status
     auxiliares = [a for a in dict.fromkeys(auxiliares) if a != agente]
     with transaction.atomic():
@@ -275,6 +364,8 @@ def atribuir(ordem, user, agente, auxiliares=(), request=None):
         if ordem.status in (Status.ABERTA, Status.ATRIBUIDA):
             ordem.status = Status.ATRIBUIDA if agente else Status.ABERTA
         ordem.save(update_fields=["agente", "status", "atualizado_em"])
+        if anterior != ordem.status:
+            registrar_tempo_status(ordem, ordem.status, user)
         ordem.agentes.all().delete()
         if agente:
             OrdemAgente.objects.create(ordem=ordem, usuario=agente, papel=OrdemAgente.Papel.PRINCIPAL, criado_por=user)
@@ -344,14 +435,20 @@ def alterar_status(ordem, user, novo, obs="", custo_materiais=None, request=None
             ordem.aprovado_por = user
             ordem.observacao_aprovacao = obs
             ordem.solicitacao_encerramento = False
-            calculado = ordem.materiais.aggregate(t=Sum(F("quantidade") * F("custo_unitario")))["t"] or Decimal("0")
-            ordem.custo_materiais = custo_materiais if custo_materiais is not None else calculado
         ordem.save()
+        if novo == Status.ENCERRADA:
+            _fechar_custos(ordem, user, custo_materiais)
+        registrar_tempo_status(ordem, novo, user)
         texto = obs or "Status atualizado."
         if novo == Status.ENCERRADA:
             texto += f" | Custo de materiais: R$ {ordem.custo_materiais:.2f}".replace(".", ",")
         historico(ordem, user, texto, anterior, novo)
         auditar(request, "ordem", ordem.pk, "ALTERAR_STATUS", "status", anterior, novo)
+        if novo == Status.ENCERRADA:
+            calcular_qualidade(ordem)
+            from conhecimento.services import gerar_artigo_da_ordem
+
+            gerar_artigo_da_ordem(ordem, user)
         url = url_ordem(ordem)
         if novo == Status.CONCLUIDA_PELO_AGENTE:
             notificar(ordem.gestor, "APROVACAO_CONCLUSAO", "Conclusão aguardando aprovação",
@@ -366,14 +463,49 @@ def alterar_status(ordem, user, novo, obs="", custo_materiais=None, request=None
 
 # --------------------------------------------------------------------- materiais e checklist
 
-def registrar_material(ordem, user, nome, quantidade, unidade="", custo_unitario=0, observacao="", request=None):
+def _fechar_custos(ordem, user, custo_materiais=None):
+    """No encerramento: consome as reservas pendentes e consolida os custos da ordem."""
+    from estoque.models import Reserva
+    from estoque.services import consumir_reserva, recalcular_custos
+
+    for reserva in ordem.reservas.filter(status=Reserva.Status.RESERVADA):
+        consumir_reserva(reserva, user)
+    recalcular_custos(ordem)
+    if custo_materiais is not None:
+        ordem.custo_materiais = custo_materiais
+        ordem.custo_total_final = custo_materiais + ordem.custo_mao_obra + ordem.custo_terceiros
+        type(ordem).objects.filter(pk=ordem.pk).update(custo_materiais=ordem.custo_materiais,
+                                                       custo_total_final=ordem.custo_total_final)
+
+
+def registrar_material(ordem, user, nome, quantidade, unidade="", custo_unitario=0, observacao="", request=None,
+                       material_estoque=None, reservar=False):
     if not (pode_gerenciar(user) or pode_executar(user, ordem)):
         raise PermissionDenied
     _bloquear_se_encerrada(ordem, user)
-    mat = Material.objects.create(ordem=ordem, nome_material=nome, quantidade=quantidade, unidade=unidade,
-                                  custo_unitario=custo_unitario or 0, observacao=observacao, usuario=user)
-    historico(ordem, user, f"Material registrado: {nome} ({quantidade} {unidade}).")
-    auditar(request, "ordem", ordem.pk, "MATERIAL", "materiais", None, nome)
+    from estoque.services import ErroEstoque, consumir_na_ordem, recalcular_custos
+
+    with transaction.atomic():
+        if material_estoque:
+            mat = Material.objects.create(
+                ordem=ordem, nome_material=material_estoque.nome[:150], quantidade=quantidade,
+                unidade=material_estoque.unidade, custo_unitario=material_estoque.custo_unitario,
+                observacao=observacao, usuario=user, material_estoque=material_estoque, situacao="CONSUMIDO")
+            try:
+                reserva = consumir_na_ordem(ordem, user, material_estoque, quantidade, reservar=reservar, item_os=mat,
+                                            request=request)
+            except ErroEstoque as exc:
+                raise RegraNegocio(str(exc)) from exc
+            situacao = {"APROVACAO_NEGATIVO": "aguardando aprovação (saldo insuficiente)",
+                        "RESERVADA": "reservado"}.get(reserva.status, "baixado do estoque")
+        else:
+            mat = Material.objects.create(ordem=ordem, nome_material=nome, quantidade=quantidade, unidade=unidade,
+                                          custo_unitario=custo_unitario or 0, observacao=observacao, usuario=user,
+                                          situacao="AVULSO")
+            recalcular_custos(ordem)
+            situacao = "registrado"
+        historico(ordem, user, f"Material {situacao}: {mat.nome_material} ({quantidade} {mat.unidade}).")
+        auditar(request, "ordem", ordem.pk, "MATERIAL", "materiais", None, mat.nome_material)
     return mat
 
 
@@ -466,6 +598,7 @@ def reabrir_com_token(ordem, user, token, obs="", request=None):
             ordem.save()
             tk.usado_em, tk.usado_por = timezone.now(), user
             tk.save()
+            registrar_tempo_status(ordem, ordem.status, user)
             texto = (obs or "").strip() or "Ordem reaberta com token autorizado pelo TI."
             historico(ordem, user, texto, anterior, ordem.status)
             auditar(request, "ordem", ordem.pk, "REABRIR", "status", anterior, ordem.status)

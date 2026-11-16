@@ -10,6 +10,10 @@ COR_STATUS = {
     "AGUARDANDO_MATERIAL": "neutro", "CONCLUIDA_PELO_AGENTE": "sucesso", "REPROVADA": "perigo", "ENCERRADA": "escuro",
     "AGUARDANDO_VALIDACAO": "alerta", "VALIDADA": "sucesso", "CORRECAO_SOLICITADA": "alerta", "CANCELADA": "neutro",
     "PENDENTE": "alerta", "APROVADA": "sucesso", "EXECUTADA": "escuro",
+    "SOLICITADA": "alerta", "COMPRADA": "primario", "RECEBIDA": "sucesso",
+    "RASCUNHO": "neutro", "PUBLICADO": "sucesso", "INATIVO": "neutro", "FINALIZADO": "escuro",
+    "RESERVADA": "info", "CONSUMIDA": "sucesso", "APROVACAO_NEGATIVO": "alerta", "ATIVA": "sucesso",
+    "PLANEJADO": "neutro", "CONCLUIDO": "sucesso", "CANCELADO": "neutro",
 }
 COR_PRIORIDADE = {"BAIXA": "sucesso", "MEDIA": "info", "ALTA": "alerta", "CRITICA": "perigo"}
 

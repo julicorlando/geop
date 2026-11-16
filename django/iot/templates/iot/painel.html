@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block titulo %}IoT e rede{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>IoT e monitoramento de rede</h1></div>
+{% if chave_nova %}<div class="msg msg-success" style="margin-bottom:1rem">Chave de <strong>{{ chave_nova.0 }}</strong> (exibida só agora): <code style="user-select:all">{{ chave_nova.1 }}</code></div>{% endif %}
+<div class="card"><h2>Dispositivos</h2>
+  <p class="ajuda">Envio: <code>POST {{ api_url }}</code> com cabeçalho <code>X-API-Key</code> e JSON <code>{"identificador":"…","tipo":"temperatura","valor":23.5,"bateria":90}</code>. Fora dos limites, o GEOP abre uma OS (uma por incidente).</p>
+  <div class="tabela-wrap"><table><tr><th>Dispositivo</th><th>Local</th><th>Último valor</th><th>Limites</th><th>Status</th><th></th></tr>
+  {% for d in dispositivos %}<tr><td><a href="{% url 'iot:dispositivo' d.pk %}"><strong>{{ d.identificador }}</strong></a><span class="sub">{{ d.tipo }}</span></td><td>{{ d.local|default:"—" }}</td>
+    <td>{{ d.ultimo_valor|default:"—" }}<span class="sub">{{ d.ultima_comunicacao|date:"d/m H:i"|default:"nunca" }}{% if d.bateria %} · bateria {{ d.bateria|floatformat:0 }}%{% endif %}</span></td>
+    <td>{{ d.limite_min|default:"–" }} a {{ d.limite_max|default:"–" }}</td>
+    <td><span class="badge {% if d.status == 'ONLINE' %}badge-sucesso{% elif d.status == 'ALERTA' or d.status == 'OFFLINE' %}badge-perigo{% else %}badge-neutro{% endif %}">{{ d.status }}</span>{% if not d.ativo %} <span class="badge badge-neutro">inativo</span>{% endif %}{% if d.ordem_alerta %}<span class="sub"><a href="{% url 'ordens:detalhe' d.ordem_alerta_id %}">{{ d.ordem_alerta.numero }}</a></span>{% endif %}</td>
+    <td><form method="post" class="chips">{% csrf_token %}<input type="hidden" name="id" value="{{ d.pk }}"><button name="acao" value="nova_chave" class="btn btn-sec btn-peq" onclick="return confirm('A chave atual deixará de funcionar. Continuar?')">Nova chave</button><button name="acao" value="alternar" class="btn-link">{% if d.ativo %}desativar{% else %}ativar{% endif %}</button></form></td></tr>
+  {% empty %}<tr><td colspan="6" class="vazio">Nenhum dispositivo.</td></tr>{% endfor %}</table></div>
+  <details class="painel" style="margin-top:.8rem"><summary>Novo dispositivo</summary><form method="post" class="filtros">{% csrf_token %}<input type="hidden" name="acao" value="dispositivo">
+    <div class="campo"><label>Identificador</label><input type="text" name="identificador" required></div><div class="campo"><label>Tipo</label><input type="text" name="tipo" placeholder="temperatura"></div>
+    <div class="campo"><label>Local</label><select name="local"><option value="">—</option>{% for l in locais %}<option value="{{ l.pk }}">{{ l.nome }}</option>{% endfor %}</select></div>
+    <div class="campo"><label>Categoria da OS</label><select name="categoria"><option value="">—</option>{% for c in categorias %}<option value="{{ c.pk }}">{{ c.nome }}</option>{% endfor %}</select></div>
+    <div class="campo"><label>Mínimo</label><input type="text" name="limite_min" inputmode="decimal"></div><div class="campo"><label>Máximo</label><input type="text" name="limite_max" inputmode="decimal"></div>
+    <div class="campo"><label>Offline após (min)</label><input type="number" name="offline_minutos" value="60"></div><div class="campo"><button>Cadastrar</button></div></form></details></div>
+<div class="card"><div class="card-titulo"><h2>Ativos de rede</h2><div class="acoes"><form method="post">{% csrf_token %}<button name="acao" value="verificar_rede" class="btn btn-sec btn-peq">Verificar agora</button></form></div></div>
+  <div class="tabela-wrap"><table><tr><th>Ativo</th><th>Endereço</th><th>Status</th><th>Última verificação</th></tr>
+  {% for a in ativos %}<tr><td><strong>{{ a.nome }}</strong><span class="sub">{{ a.get_tipo_display }} · {{ a.local|default:"" }} · criticidade {{ a.get_criticidade_display|lower }}</span></td><td>{{ a.endereco_ip }}:{{ a.porta }}</td>
+    <td><span class="badge {% if a.status == 'ONLINE' %}badge-sucesso{% elif a.status == 'FALHA' %}badge-perigo{% elif a.status == 'INSTAVEL' %}badge-alerta{% else %}badge-neutro{% endif %}">{{ a.status }}</span>{% if a.ordem_alerta %}<span class="sub"><a href="{% url 'ordens:detalhe' a.ordem_alerta_id %}">{{ a.ordem_alerta.numero }}</a></span>{% endif %}</td>
+    <td>{{ a.ultima_verificacao|date:"d/m H:i"|default:"—" }}{% if a.latencia_ms %} · {{ a.latencia_ms }} ms{% endif %}</td></tr>
+  {% empty %}<tr><td colspan="4" class="vazio">Nenhum ativo.</td></tr>{% endfor %}</table></div>
+  <details class="painel" style="margin-top:.8rem"><summary>Novo ativo de rede</summary><form method="post" class="filtros">{% csrf_token %}<input type="hidden" name="acao" value="ativo_rede">
+    <div class="campo"><label>Nome</label><input type="text" name="nome" required></div><div class="campo"><label>Tipo</label><select name="tipo">{% for v, r in tipos_rede %}<option value="{{ v }}">{{ r }}</option>{% endfor %}</select></div>
+    <div class="campo"><label>IP / host</label><input type="text" name="endereco_ip" required></div><div class="campo"><label>Porta</label><input type="number" name="porta" value="80"></div>
+    <div class="campo"><label>Local</label><select name="local"><option value="">—</option>{% for l in locais %}<option value="{{ l.pk }}">{{ l.nome }}</option>{% endfor %}</select></div>
+    <div class="campo"><label>Criticidade</label><select name="criticidade"><option value="MEDIA">Média</option><option value="ALTA">Alta</option><option value="CRITICA">Crítica</option><option value="BAIXA">Baixa</option></select></div><div class="campo"><button>Salvar</button></div></form></details></div>
+{% endblock %}

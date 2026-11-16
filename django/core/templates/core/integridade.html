@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block titulo %}Integridade de arquivos{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Integridade de arquivos</h1><p class="subtitulo">Somente diagnóstico: nada é apagado automaticamente.</p></div>
+<div class="kpis"><div class="kpi"><div class="valor">{{ r.referenciados }}</div><div class="rotulo">Arquivos referenciados</div></div>
+  <div class="kpi perigo"><div class="valor">{{ r.ausentes|length }}</div><div class="rotulo">Referências sem arquivo</div></div>
+  <div class="kpi alerta"><div class="valor">{{ r.orfaos|length }}</div><div class="rotulo">Arquivos órfãos</div></div>
+  <div class="kpi"><div class="valor">{{ r.tamanho }}</div><div class="rotulo">Espaço da mídia</div></div></div>
+<div class="grade grade-2"><div class="card"><h2>Sem arquivo</h2><ul>{% for a in r.ausentes|slice:":100" %}<li><code>{{ a }}</code></li>{% empty %}<li class="muted">Nenhum.</li>{% endfor %}</ul></div>
+<div class="card"><h2>Órfãos (até 100)</h2><ul>{% for a in r.orfaos|slice:":100" %}<li><code>{{ a }}</code></li>{% empty %}<li class="muted">Nenhum.</li>{% endfor %}</ul></div></div>
+{% endblock %}

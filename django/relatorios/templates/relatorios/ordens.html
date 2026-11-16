@@ -1,0 +1,24 @@
+{% extends "base.html" %}{% load geop %}
+{% block titulo %}Relatórios{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Relatório de ordens</h1>
+  <div class="acoes nao-imprimir">
+    {% if user|pode:"relatorios.exportar" %}<a class="btn btn-sec" href="?{{ params }}&exportar=csv">Exportar CSV</a><a class="btn btn-sec" href="?{{ params }}&exportar=executivo" target="_blank">Relatório executivo</a><a class="btn btn-sec" href="?{{ params }}&exportar=executivo&fotos=1" target="_blank">Executivo com fotos</a>{% endif %}
+    <a class="btn btn-sec" href="{% url 'relatorios:reincidencias' %}">Reincidências</a>
+    {% if user|pode:"relatorios.financeiro" %}<a class="btn btn-sec" href="{% url 'relatorios:financeiro' %}">Financeiro</a><a class="btn btn-sec" href="{% url 'relatorios:mensal' %}">Mensal</a>{% endif %}</div>
+  {% if cota %}<p class="subtitulo">Franquia de emissões: {{ cota.restantes }} de {{ cota.limite }} disponíveis. <a href="{% url 'relatorios:token' %}">Renovar com token do TI</a></p>{% endif %}</div>
+<form class="card filtros nao-imprimir" method="get">{% for f in form %}<div class="campo"><label for="{{ f.id_for_label }}">{{ f.label }}</label>{{ f }}</div>{% endfor %}<div class="campo chips"><button>Aplicar</button><a class="btn btn-sec" href="?">Limpar</a></div></form>
+{% include "relatorios/_kpis.html" %}
+<div class="grade grade-2">
+  <div class="card"><h2>Por status</h2>{% include "relatorios/_barras.html" with linhas=grupos.status %}</div>
+  <div class="card"><h2>Por prioridade</h2>{% include "relatorios/_barras.html" with linhas=grupos.prioridade %}</div>
+  <div class="card"><h2>Por categoria</h2>{% include "relatorios/_barras.html" with linhas=grupos.categoria %}</div>
+  <div class="card"><h2>Por local (top 15)</h2>{% include "relatorios/_barras.html" with linhas=grupos.local %}</div>
+  <div class="card"><h2>Por agente</h2>{% include "relatorios/_barras.html" with linhas=grupos.agente %}</div>
+  <div class="card"><h2>Tempo médio em cada status</h2><div class="tabela-wrap"><table>{% for t in tempos %}<tr><td>{{ t.rotulo }}</td><td>{{ t.horas }} h</td><td class="muted">{{ t.n }} passagem(ns)</td></tr>{% empty %}<tr><td class="muted">Sem dados (registrados a partir da migração).</td></tr>{% endfor %}</table></div></div>
+  <div class="card"><h2>Ranking de atraso por agente</h2><div class="tabela-wrap"><table>{% for r in ranking %}<tr><td>{{ r.agente__nome }}</td><td><strong>{{ r.total }}</strong></td></tr>{% empty %}<tr><td class="muted">Nenhum atraso. 🎉</td></tr>{% endfor %}</table></div></div>
+  <div class="card"><h2>Ordens atrasadas</h2>{% include "ordens/_mini_lista.html" with ordens=atrasadas vazio="Nenhuma ordem atrasada." %}</div>
+  <div class="card"><h2>Serviços essenciais em aberto</h2>{% include "ordens/_mini_lista.html" with ordens=essenciais vazio="Nenhum." %}</div>
+  <div class="card"><h2>Últimas ordens</h2>{% include "ordens/_mini_lista.html" with ordens=ultimas %}</div>
+</div>
+{% endblock %}

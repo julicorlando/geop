@@ -12,7 +12,7 @@
     {% include "core/_campos.html" %}
     <input type="hidden" name="next" value="{{ next }}">
     <button type="submit" style="width:100%">Entrar</button>
-    <p class="ajuda" style="text-align:center;margin-top:1rem">Esqueceu a senha? Fale com o TI.</p>
+    <p class="ajuda" style="text-align:center;margin-top:1rem"><a href="{% url 'accounts:recuperar' %}">Esqueceu a senha?</a></p>
   </form>
 </div>
 {% endblock %}

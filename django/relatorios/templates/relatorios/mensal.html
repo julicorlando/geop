@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block titulo %}Relatório mensal{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Relatório gerencial · {{ inicio|date:"m/Y" }}</h1>
+  <form class="acoes nao-imprimir" method="get"><input type="month" name="mes" value="{{ mes_iso }}"><button>Abrir</button><button type="button" class="btn btn-sec" onclick="print()">Imprimir</button></form></div>
+{% include "relatorios/_kpis.html" %}
+<div class="card"><h2>Custos</h2><dl class="dados"><dt>Materiais</dt><dd>R$ {{ custos.materiais|default:0|floatformat:2 }}</dd><dt>Mão de obra</dt><dd>R$ {{ custos.mao|default:0|floatformat:2 }}</dd>
+  <dt>Terceiros e outros</dt><dd>R$ {{ custos.terceiros|default:0|floatformat:2 }}</dd><dt>Total</dt><dd><strong>R$ {{ custos.total|default:0|floatformat:2 }}</strong></dd><dt>Orçamento previsto</dt><dd>R$ {{ custos.previsto|default:0|floatformat:2 }}</dd><dt>Qualidade média</dt><dd>{{ k.qualidade_media }}%</dd></dl></div>
+<div class="grade grade-2">
+  <div class="card"><h2>Categorias</h2><table>{% for c in categorias %}<tr><td>{{ c.categoria__nome }}</td><td>{{ c.qtd }}</td><td>R$ {{ c.custo|default:0|floatformat:2 }}</td></tr>{% endfor %}</table></div>
+  <div class="card"><h2>Locais</h2><table>{% for l in locais %}<tr><td>{{ l.local__nome }}</td><td>{{ l.qtd }}</td><td>R$ {{ l.custo|default:0|floatformat:2 }}</td></tr>{% endfor %}</table></div>
+</div>
+<div class="card"><h2>Maiores custos</h2><table>{% for o in top_custos %}<tr><td><a href="{% url 'ordens:detalhe' o.pk %}">{{ o.numero }}</a> {{ o.titulo }}</td><td>R$ {{ o.custo_total_final|floatformat:2 }}</td></tr>{% endfor %}</table></div>
+{% endblock %}

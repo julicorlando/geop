@@ -92,12 +92,12 @@ CADASTROS = {
 @permissao_requerida("cadastros.gerenciar")
 def cadastros(request, tipo="locais"):
     if tipo == "setores":
-        itens = Setor.objects.annotate(n=Count("usuarios"))
+        itens = Setor.objects.annotate(n=Count("usuarios")).order_by("nome")
         return render(request, "core/cadastros.html", {"tipo": tipo, "titulo": "Setores", "itens": itens})
     if tipo not in CADASTROS:
         raise Http404
     modelo, _, titulo = CADASTROS[tipo]
-    itens = modelo.objects.annotate(n=Count("ordens"))
+    itens = modelo.objects.annotate(n=Count("ordens")).order_by("nome")
     return render(request, "core/cadastros.html", {"tipo": tipo, "titulo": titulo, "itens": itens})
 
 
@@ -163,3 +163,65 @@ def erro_403(request, exception=None):
 
 def erro_404(request, exception=None):
     return render(request, "404.html", status=404)
+
+
+def legado_credencial(request):
+    from cftv.views import legado_credencial as v
+
+    return v(request)
+
+
+def legado_controle(request):
+    from cftv.views import legado_controle as v
+
+    return v(request)
+
+
+@login_required
+def notificacoes_api(request):
+    from django.http import JsonResponse
+
+    qs = request.user.notificacoes.filter(lida_em__isnull=True)
+    return JsonResponse({"nao_lidas": qs.count(), "ultimas": [
+        {"id": n.pk, "titulo": n.titulo, "mensagem": n.mensagem[:140], "url": n.url,
+         "quando": timezone.localtime(n.criado_em).strftime("%d/%m %H:%M")} for n in qs[:5]]})
+
+
+def manifest(request):
+    from django.conf import settings
+    from django.http import JsonResponse
+    from django.templatetags.static import static
+
+    return JsonResponse({
+        "name": f"GEOP · {settings.GEOP_NOME_UNIDADE}", "short_name": "GEOP", "start_url": "/", "scope": "/",
+        "display": "standalone", "background_color": "#0b2540", "theme_color": "#0b2540", "lang": "pt-BR",
+        "icons": [{"src": static("icon.svg"), "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}],
+    }, content_type="application/manifest+json")
+
+
+def service_worker(request):
+    from django.http import HttpResponse
+
+    js = """const CACHE='geop-v1';
+self.addEventListener('install',e=>{self.skipWaiting();});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});
+self.addEventListener('fetch',e=>{
+  const r=e.request; if(r.method!=='GET') return;
+  const u=new URL(r.url); if(u.origin!==location.origin) return;
+  if(u.pathname.startsWith('/static/')){e.respondWith(caches.open(CACHE).then(c=>c.match(r).then(m=>m||fetch(r).then(resp=>{c.put(r,resp.clone());return resp;}))));return;}
+  if(r.mode==='navigate'){e.respondWith(fetch(r).catch(()=>new Response('<meta charset=utf-8><meta name=viewport content="width=device-width"><body style="font-family:system-ui;padding:2rem;text-align:center"><h1>Sem conexão</h1><p>O GEOP precisa de internet. Tente novamente em instantes.</p></body>',{headers:{'Content-Type':'text/html; charset=utf-8'}})));}
+});"""
+    return HttpResponse(js, content_type="application/javascript")
+
+
+def legado_api_iot(request):
+    from iot.views import api_leituras
+
+    return api_leituras(request)
+
+
+legado_api_iot.csrf_exempt = True
+
+
+def legado_solicitar_acesso(request):
+    return redirect("cftv:consultar")

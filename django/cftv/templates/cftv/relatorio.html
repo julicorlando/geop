@@ -1,0 +1,32 @@
+{% extends "base.html" %}{% load geop %}
+{% block titulo %}{{ rel }}{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div><h1>{{ rel }}</h1><div class="chips">{% badge_status rel %}<span class="badge badge-neutro">{{ rel.operador }}</span><span class="badge badge-neutro">fechamento automático {{ prazo|date:"d/m H:i" }}</span></div></div>
+  <div class="acoes nao-imprimir"><button class="btn btn-sec" onclick="print()">Imprimir</button>
+    {% if editar and rel.status != "FINALIZADO" %}<form method="post" data-confirmar="Finalizar o relatório? Depois só o TI libera edição.">{% csrf_token %}<input type="hidden" name="acao" value="finalizar"><button>Finalizar</button></form>{% endif %}</div></div>
+{% if not editar %}<div class="msg msg-info" style="margin-bottom:1rem">Somente leitura.
+  {% if rel.operador_id == user.pk %}<form method="post" class="chips" style="margin-top:.5rem">{% csrf_token %}<input type="hidden" name="acao" value="usar_token"><input type="text" name="token" placeholder="Código do TI" inputmode="numeric" maxlength="6" style="max-width:150px"><button class="btn btn-peq">Liberar edição</button></form>{% endif %}</div>{% endif %}
+{% if user.is_ti %}<details class="card painel nao-imprimir"><summary>Gerar código de edição (TI)</summary><form method="post" class="chips">{% csrf_token %}<input type="hidden" name="acao" value="gerar_token"><input type="text" name="motivo" placeholder="Motivo"><button class="btn btn-peq">Gerar</button></form></details>{% endif %}
+<div class="detalhe-layout"><div>
+  <form method="post" class="card">{% csrf_token %}<input type="hidden" name="acao" value="salvar"><h2>Relatório do turno</h2>
+    <fieldset {% if not editar %}disabled{% endif %} style="border:0;padding:0;margin:0">{% include "core/_campos.html" %}{% if editar %}<button>Salvar relatório</button>{% endif %}</fieldset></form>
+  <div class="card"><h2>Ocorrências ({{ ocorrencias|length }})</h2>
+    {% for o in ocorrencias %}<div style="border-bottom:1px solid var(--border);padding:.5rem 0"><strong>{{ o.horario|date:"H:i" }} · {{ o.get_nivel_display }}</strong> — {{ o.tipo }} {{ o.local }}{% if o.preservar_imagens %} <span class="badge badge-alerta">preservar imagens</span>{% endif %}
+      <p style="margin:.2rem 0">{{ o.descricao|linebreaksbr }}</p><span class="sub">Equipes: {{ o.equipes_acionadas|default:"—" }} · Resposta: {{ o.tempo_resposta_min|default:"—" }} min · Encerramento: {{ o.encerramento|default:"—" }}</span>
+      {% if editar %}<form method="post" class="nao-imprimir">{% csrf_token %}<input type="hidden" name="acao" value="excluir_ocorrencia"><input type="hidden" name="id" value="{{ o.pk }}"><button class="btn-link">excluir</button></form>{% endif %}</div>
+    {% empty %}<p class="muted">Nenhuma ocorrência.</p>{% endfor %}
+    {% if editar %}<details class="painel nao-imprimir"><summary>Registrar ocorrência</summary><form method="post">{% csrf_token %}<input type="hidden" name="acao" value="ocorrencia">{% include "core/_campos.html" with form=oc_form %}<button>Registrar</button></form></details>{% endif %}</div>
+  <div class="card"><h2>Observação de equipes ({{ observacoes|length }})</h2>
+    {% for o in observacoes %}<div style="border-bottom:1px solid var(--border);padding:.4rem 0"><strong>{{ o.equipe }}</strong> · {{ o.item }} · <span class="badge badge-neutro">{{ o.get_classificacao_display }}</span> <span class="muted">{{ o.horario|date:"H:i" }} {{ o.local }}</span><br>{{ o.descricao }}{% if o.providencia %}<span class="sub">Providência: {{ o.providencia }}</span>{% endif %}
+      {% if editar %}<form method="post" class="nao-imprimir" style="display:inline">{% csrf_token %}<input type="hidden" name="acao" value="excluir_observacao"><input type="hidden" name="id" value="{{ o.pk }}"><button class="btn-link">excluir</button></form>{% endif %}</div>
+    {% empty %}<p class="muted">Nenhuma observação.</p>{% endfor %}
+    {% if editar %}<details class="painel nao-imprimir"><summary>Registrar observação</summary><form method="post">{% csrf_token %}<input type="hidden" name="acao" value="observacao">{% include "core/_campos.html" with form=ob_form %}<button>Registrar</button></form></details>{% endif %}</div>
+</div><div>
+  <div class="card"><h2>Liberações do dia</h2>
+    {% for lib, conf in liberacoes %}<div style="border-bottom:1px solid var(--border);padding:.45rem 0"><strong>{{ lib.nome_completo }}</strong> → {{ lib.destino_nome }}<span class="sub">{{ lib.hora_inicio|time:"H:i"|default:"" }}{% if lib.hora_fim %}–{{ lib.hora_fim|time:"H:i" }}{% endif %} {{ lib.motivo|truncatechars:60 }}</span>
+      {% if conf %}<span class="badge badge-sucesso">{{ conf.get_status_confirmacao_display }}</span>{% endif %}
+      {% if editar %}<form method="post" class="chips nao-imprimir" style="margin-top:.3rem">{% csrf_token %}<input type="hidden" name="acao" value="confirmar_liberacao"><input type="hidden" name="liberacao_id" value="{{ lib.pk }}">
+        <select name="status_confirmacao" style="max-width:200px">{% for v, r in status_conf %}<option value="{{ v }}" {% if conf.status_confirmacao == v %}selected{% endif %}>{{ r }}</option>{% endfor %}</select><input type="text" name="alteracao" placeholder="Alteração observada" value="{{ conf.alteracao_observada|default:'' }}" style="max-width:180px"><button class="btn btn-peq">Conferir</button></form>{% endif %}</div>
+    {% empty %}<p class="muted">Nenhuma liberação para esta data.</p>{% endfor %}</div>
+</div></div>
+{% endblock %}

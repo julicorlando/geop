@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block titulo %}Equipe{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Equipe e disponibilidade</h1>
+  <div class="acoes"><a class="btn btn-sec" href="{% url 'operacao:escalas' %}">Escalas</a><a class="btn btn-sec" href="{% url 'operacao:cronograma' %}">Cronograma</a></div>
+  <p class="subtitulo">Agentes ausentes, de férias ou no limite de carga não recebem novas ordens. As especialidades orientam a recomendação automática.</p></div>
+<div class="card"><div class="tabela-wrap"><table>
+  <tr><th>Agente</th><th>Carga</th><th>Estado e capacidade</th><th>Especialidades</th></tr>
+  {% for m in membros %}<tr>
+    <td><strong>{{ m.usuario.nome }}</strong><span class="sub">{{ m.usuario.cargo }}</span></td>
+    <td>{{ m.carga }} / {{ m.capacidade }}{% if m.carga >= m.capacidade %} <span class="badge badge-perigo">lotado</span>{% endif %}</td>
+    <td><form method="post" class="chips">{% csrf_token %}<input type="hidden" name="acao" value="estado"><input type="hidden" name="usuario" value="{{ m.usuario.pk }}">
+      <select name="estado" style="max-width:150px">{% for v, r in estados %}<option value="{{ v }}" {% if v == m.estado %}selected{% endif %}>{{ r }}</option>{% endfor %}</select>
+      <input type="number" name="capacidade" min="1" max="50" value="{{ m.capacidade }}" style="max-width:70px" title="Capacidade">
+      <input type="text" name="observacao" value="{{ m.observacao }}" placeholder="Observação" style="max-width:150px"><button class="btn btn-peq">Salvar</button></form></td>
+    <td>{% for e in m.especialidades %}<form method="post" style="display:inline">{% csrf_token %}<input type="hidden" name="acao" value="remover_especialidade"><input type="hidden" name="id" value="{{ e.pk }}"><span class="badge badge-info">{{ e.especialidade }} · {{ e.get_nivel_display }} <button class="btn-link" title="remover">×</button></span></form> {% endfor %}
+      <form method="post" class="chips" style="margin-top:.3rem">{% csrf_token %}<input type="hidden" name="acao" value="especialidade"><input type="hidden" name="usuario" value="{{ m.usuario.pk }}">
+        <select name="especialidade" style="max-width:150px">{% for c in categorias %}<option>{{ c.nome }}</option>{% endfor %}</select><select name="nivel" style="max-width:120px"><option value="1">Básico</option><option value="2">Intermediário</option><option value="3">Avançado</option></select><button class="btn btn-sec btn-peq">+</button></form></td></tr>
+  {% empty %}<tr><td colspan="4" class="vazio">Nenhum usuário com permissão de executar ordens.</td></tr>{% endfor %}
+</table></div></div>
+<div class="grade grade-2">
+  <form method="post" class="card">{% csrf_token %}<input type="hidden" name="acao" value="feriado"><h2>Novo feriado</h2>{% include "core/_campos.html" with form=feriado_form %}<button>Salvar feriado</button></form>
+  <div class="card"><h2>Feriados</h2><ul>{% for f in feriados %}<li>{{ f }}{% if f.local %} ({{ f.local }}){% endif %}</li>{% empty %}<li class="muted">Nenhum feriado próximo.</li>{% endfor %}</ul></div>
+</div>
+{% endblock %}

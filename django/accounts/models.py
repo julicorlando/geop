@@ -86,6 +86,9 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField("ativo", default=True)
     is_staff = models.BooleanField("acesso ao admin", default=False)
     forcar_troca_senha = models.BooleanField(default=False)
+    totp_segredo = models.CharField(max_length=255, blank=True, help_text="Segredo 2FA cifrado.")
+    totp_ativo = models.BooleanField("2FA ativo", default=False)
+    ultimo_login_ip = models.GenericIPAddressField(null=True, blank=True)
     senha_alterada_em = models.DateTimeField(null=True, blank=True)
     criado_por = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
     criado_em = models.DateTimeField(default=timezone.now)
@@ -135,3 +138,19 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
 
     def pode_algum(self, *codigos) -> bool:
         return any(self.pode(c) for c in codigos)
+
+
+class Convite(models.Model):
+    """Link de ativação: o TI cria o usuário e o próprio usuário define a senha."""
+
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name="convites")
+    token_hash = models.CharField(max_length=64, unique=True)
+    gerado_por = models.ForeignKey(Usuario, on_delete=models.PROTECT, related_name="+")
+    expira_em = models.DateTimeField()
+    usado_em = models.DateTimeField(null=True, blank=True)
+    invalidado_em = models.DateTimeField(null=True, blank=True)
+    criado_em = models.DateTimeField(default=timezone.now)
+
+    @property
+    def valido(self):
+        return not self.usado_em and not self.invalidado_em and self.expira_em > timezone.now()

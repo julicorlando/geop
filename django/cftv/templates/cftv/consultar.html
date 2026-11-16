@@ -1,0 +1,8 @@
+{% extends "base_publico.html" %}
+{% block titulo %}Acompanhar solicitação{% endblock %}
+{% block conteudo %}
+<form method="post" class="card" style="max-width:480px;margin:auto">{% csrf_token %}<h1>Acompanhar solicitação</h1>
+  {% if erro %}<div class="msg msg-error" style="margin-bottom:1rem">{{ erro }}</div>{% endif %}
+  <div class="campo"><label>CPF</label><input type="text" name="cpf" inputmode="numeric" required></div>
+  <div class="campo"><label>Protocolo</label><input type="text" name="protocolo" placeholder="AC-20260101-ABCD" required></div><button>Consultar</button></form>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}{% load geop %}
+{% block titulo %}Compras{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Compras</h1><p class="subtitulo">Solicitação → aprovação (por outra pessoa) → compra → recebimento (entrada no estoque ou custo na OS).</p></div>
+<details class="card painel" {% if not pagina %}open{% endif %}><summary>Nova solicitação de compra</summary>
+<form method="post">{% csrf_token %}<input type="hidden" name="acao" value="criar">
+  <div class="form-grade">
+    <div class="campo"><label>Ordem (opcional)</label><select name="ordem"><option value="">Sem vínculo</option>{% for o in ordens %}<option value="{{ o.pk }}">{{ o.numero }} — {{ o.titulo|truncatechars:50 }}</option>{% endfor %}</select></div>
+    <div class="campo campo-largo"><label>Justificativa</label><textarea name="justificativa" rows="2" required></textarea></div></div>
+  <div class="tabela-wrap"><table><tr><th>Material do estoque</th><th>ou descrição</th><th>Qtd.</th><th>Un.</th><th>Custo unit. previsto</th></tr>
+  {% for i in linhas %}<tr><td><select name="item_{{ i }}_material"><option value="">—</option>{% for m in materiais %}<option value="{{ m.pk }}">{{ m.nome }}</option>{% endfor %}</select></td>
+    <td><input type="text" name="item_{{ i }}_descricao"></td><td><input type="text" name="item_{{ i }}_quantidade" inputmode="decimal" value="1" style="max-width:80px"></td>
+    <td><input type="text" name="item_{{ i }}_unidade" style="max-width:70px"></td><td><input type="text" name="item_{{ i }}_custo" inputmode="decimal" placeholder="0,00" style="max-width:120px"></td></tr>{% endfor %}</table></div>
+  <button style="margin-top:.6rem">Enviar para aprovação</button></form></details>
+<div class="chips" style="margin-bottom:1rem"><a class="btn btn-peq {% if request.GET.status %}btn-sec{% endif %}" href="?">Todas</a>{% for v, r in status_lista %}<a class="btn btn-peq {% if request.GET.status != v %}btn-sec{% endif %}" href="?status={{ v }}">{{ r }}</a>{% endfor %}</div>
+<div class="card"><div class="tabela-wrap"><table><tr><th>#</th><th>Itens</th><th>Ordem</th><th>Solicitante</th><th>Valores</th><th>Status</th><th>Ações</th></tr>
+{% for c in pagina %}<tr><td>{{ c.pk }}</td>
+  <td>{% for i in c.itens.all %}{{ i.quantidade|floatformat:"-2" }} {{ i.unidade }} {{ i.descricao }}{% if not forloop.last %}<br>{% endif %}{% endfor %}<span class="sub">{{ c.justificativa|truncatechars:90 }}</span></td>
+  <td>{% if c.ordem %}<a href="{% url 'ordens:detalhe' c.ordem_id %}">{{ c.ordem.numero }}</a>{% else %}—{% endif %}</td>
+  <td>{{ c.solicitante }}<span class="sub">{{ c.criado_em|date:"d/m/Y" }}</span></td>
+  <td>Previsto R$ {{ c.valor_previsto|floatformat:2 }}{% if c.valor_final %}<span class="sub">Final R$ {{ c.valor_final|floatformat:2 }} · {{ c.fornecedor }} {{ c.numero_documento }}</span>{% endif %}</td>
+  <td>{% badge_status c %}{% if c.aprovador %}<span class="sub">{{ c.aprovador }}</span>{% endif %}</td>
+  <td>{% if user|pode:"compras.gerenciar" %}
+    {% if c.status == "SOLICITADA" and c.solicitante_id != user.pk or c.status == "SOLICITADA" and user.is_ti %}<form method="post" class="chips">{% csrf_token %}<input type="hidden" name="compra_id" value="{{ c.pk }}"><input type="text" name="observacao" placeholder="Parecer" style="max-width:140px"><button name="acao" value="aprovar" class="btn btn-peq btn-sucesso">Aprovar</button><button name="acao" value="reprovar" class="btn btn-peq btn-perigo">Reprovar</button></form>{% endif %}
+    {% if c.status == "APROVADA" %}<form method="post" class="chips">{% csrf_token %}<input type="hidden" name="compra_id" value="{{ c.pk }}"><input type="text" name="fornecedor" placeholder="Fornecedor" style="max-width:130px"><input type="text" name="documento" placeholder="NF" style="max-width:90px"><input type="text" name="valor_final" placeholder="Valor" style="max-width:90px"><button name="acao" value="comprada" class="btn btn-peq">Comprada</button></form>{% endif %}
+    {% if c.status == "COMPRADA" %}<form method="post">{% csrf_token %}<input type="hidden" name="compra_id" value="{{ c.pk }}"><button name="acao" value="receber" class="btn btn-peq btn-sucesso">Receber</button></form>{% endif %}
+  {% endif %}
+  {% if c.status == "SOLICITADA" or c.status == "APROVADA" %}{% if c.solicitante_id == user.pk or user|pode:"compras.gerenciar" %}<form method="post" data-confirmar="Cancelar a compra #{{ c.pk }}?">{% csrf_token %}<input type="hidden" name="compra_id" value="{{ c.pk }}"><button name="acao" value="cancelar" class="btn-link">cancelar</button></form>{% endif %}{% endif %}</td></tr>
+{% empty %}<tr><td colspan="7" class="vazio">Nenhuma compra.</td></tr>{% endfor %}</table></div>{% include "core/_paginacao.html" %}</div>
+{% endblock %}

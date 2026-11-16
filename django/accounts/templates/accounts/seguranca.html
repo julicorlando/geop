@@ -1,0 +1,18 @@
+{% extends "base.html" %}{% load static %}
+{% block titulo %}Segurança da conta{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Segurança da conta</h1><div class="acoes"><a class="btn btn-sec" href="{% url 'accounts:mudar_senha' %}">Alterar senha</a></div></div>
+<div class="grade grade-2">
+<div class="card"><h2>Verificação em duas etapas (2FA)</h2>
+  {% if user.totp_ativo %}<p><span class="badge badge-sucesso">Ativada</span> Além da senha, o login pede um código do aplicativo autenticador.</p>
+    <form method="post">{% csrf_token %}<input type="hidden" name="acao" value="desativar"><div class="campo"><label>Senha</label><input type="password" name="senha" required></div><div class="campo"><label>Código atual</label><input type="text" name="codigo" inputmode="numeric" maxlength="6" required></div><button class="btn btn-perigo">Desativar 2FA</button></form>
+  {% elif segredo %}<p>1. No celular, abra o Google Authenticator, Microsoft Authenticator ou similar e escaneie:</p>
+    <div id="qr2fa" style="display:inline-block;padding:8px;background:#fff;border-radius:8px"></div>
+    <p class="ajuda">Ou digite a chave: <code style="user-select:all">{{ segredo }}</code></p>
+    <form method="post">{% csrf_token %}<input type="hidden" name="acao" value="confirmar"><div class="campo"><label>2. Digite o código exibido no aplicativo</label><input type="text" name="codigo" inputmode="numeric" maxlength="6" required autofocus></div><button>Ativar</button></form>
+    <script src="{% static 'js/vendor/qrcode.min.js' %}"></script>{{ uri|json_script:"uri2fa" }}<script>new QRCode(document.getElementById("qr2fa"),{text:JSON.parse(document.getElementById("uri2fa").textContent),width:200,height:200});</script>
+  {% else %}<p>Proteja sua conta: mesmo que alguém descubra sua senha, não conseguirá entrar sem o seu celular.</p>
+    <form method="post">{% csrf_token %}<input type="hidden" name="acao" value="iniciar"><button>Configurar 2FA</button></form>{% endif %}</div>
+<div class="card"><h2>Atividade recente</h2><ul>{% for a in acessos %}<li>{{ a.criado_em|date:"d/m/Y H:i" }} — {{ a.acao }} <span class="muted">{{ a.ip|default:"" }}</span></li>{% empty %}<li class="muted">Sem registros.</li>{% endfor %}</ul></div>
+</div>
+{% endblock %}

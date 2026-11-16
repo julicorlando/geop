@@ -1,0 +1,25 @@
+{% load static geop %}<!doctype html><html lang="pt-br"><head><meta charset="utf-8"><title>Relatório executivo de ordens</title>
+<link rel="stylesheet" href="{% static 'css/app.css' %}">
+<style>body{background:#fff;color:#111;max-width:1100px;margin:auto;padding:1.5rem}.card{box-shadow:none}.capa{text-align:center;margin-bottom:1.5rem}.antes-depois{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}.antes-depois img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:6px}.os{break-inside:avoid}</style></head>
+<body>
+<div class="nao-imprimir chips" style="margin-bottom:1rem"><button onclick="print()">Imprimir / salvar PDF</button></div>
+<div class="capa"><h1>{{ GEOP_NOME_UNIDADE }} — Relatório executivo de ordens de serviço</h1>
+  <p class="muted">Período: {{ dados.inicio|date:"d/m/Y"|default:"início" }} a {{ dados.fim|date:"d/m/Y"|default:"hoje" }} · Gerado em {% now "d/m/Y H:i" %} por {{ user.nome }}</p></div>
+{% include "relatorios/_kpis.html" %}
+<div class="card"><h2>Mensagem principal</h2><p>
+  {% if k.atrasadas %}Há <strong>{{ k.atrasadas }}</strong> ordem(ns) fora do prazo exigindo ação.{% else %}Nenhuma ordem fora do prazo.{% endif %}
+  A taxa de conclusão no período é de <strong>{{ k.taxa_conclusao }}%</strong>{% if k.sla_cumprido is not None %}, com <strong>{{ k.sla_cumprido }}%</strong> das encerradas dentro do SLA{% endif %}.
+  O custo total registrado é de <strong>R$ {{ k.custo_total|floatformat:2 }}</strong>{% if k.orcamento_previsto %} para um orçamento previsto de R$ {{ k.orcamento_previsto|floatformat:2 }}{% endif %}.</p></div>
+<div class="grade grade-2">
+  <div class="card"><h2>Evolução mensal</h2>{% for e in evolucao %}<div class="barra"><span>{{ e.mes|date:"m/Y" }}</span><div class="trilho"><span style="width:{{ e.pct }}%"></span></div><strong>{{ e.abertas }}</strong></div>{% empty %}<p class="muted">Sem dados.</p>{% endfor %}</div>
+  <div class="card"><h2>Idade das ordens ativas</h2>{% for i in idade %}<div class="barra"><span>{{ i.rotulo }}</span><div></div><strong>{{ i.total }}</strong></div>{% endfor %}</div>
+  <div class="card"><h2>Por categoria</h2>{% include "relatorios/_barras.html" with linhas=grupos.categoria %}</div>
+  <div class="card"><h2>Locais com mais ordens</h2>{% include "relatorios/_barras.html" with linhas=grupos.local %}</div>
+</div>
+<div class="card"><h2>Ordens atrasadas</h2>{% include "ordens/_mini_lista.html" with ordens=atrasadas vazio="Nenhuma." %}</div>
+<div class="card"><h2>Serviços essenciais</h2>{% include "ordens/_mini_lista.html" with ordens=essenciais vazio="Nenhum." %}</div>
+{% if com_fotos %}<h2 style="margin-top:2rem">Apêndice: ordens com fotos (antes e depois)</h2>
+{% for o in ordens %}<div class="card os"><h3>{{ o.numero }} — {{ o.titulo }}</h3><p class="muted">{{ o.local }} · {{ o.get_status_display }} · {{ o.criado_em|date:"d/m/Y" }}</p>
+  <div class="antes-depois">{% for a in o.anexos.all %}{% if a.eh_imagem %}{% if a.tipo == "FOTO_ANTES" or a.tipo == "FOTO_DEPOIS" %}<figure style="margin:0"><img src="{% url 'ordens:miniatura' a.pk %}" alt=""><figcaption class="muted">{{ a.get_tipo_display }}</figcaption></figure>{% endif %}{% endif %}{% endfor %}</div></div>
+{% endfor %}{% endif %}
+</body></html>

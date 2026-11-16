@@ -1,7 +1,7 @@
 from django.shortcuts import redirect
 from django.urls import reverse
 
-ISENTOS = ("/conta/entrar", "/conta/sair", "/conta/senha", "/static/")
+ISENTOS = ("/conta/entrar", "/conta/sair", "/conta/senha", "/conta/ativar", "/conta/recuperar", "/static/")
 
 
 class TrocaSenhaObrigatoriaMiddleware:

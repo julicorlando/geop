@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block titulo %}Passagem de turno{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Passagem de turno</h1></div>
+<div class="detalhe-layout"><div>
+  <div class="card"><h2>Recebidas</h2>{% for p in recebidas %}
+    <details class="painel" {% if not p.lida_em %}open{% endif %}><summary>{{ p.criado_em|date:"d/m H:i" }} — de {{ p.entrega }}{% if not p.lida_em %} <span class="badge badge-primario">nova</span>{% endif %}</summary>
+      <dl class="dados">{% if p.pendencias %}<dt>Pendências</dt><dd>{{ p.pendencias|linebreaksbr }}</dd>{% endif %}{% if p.servicos_andamento %}<dt>Em andamento</dt><dd>{{ p.servicos_andamento|linebreaksbr }}</dd>{% endif %}
+      {% if p.ocorrencias_criticas %}<dt>Ocorrências críticas</dt><dd>{{ p.ocorrencias_criticas|linebreaksbr }}</dd>{% endif %}{% if p.equipamentos_indisponiveis %}<dt>Equipamentos indisponíveis</dt><dd>{{ p.equipamentos_indisponiveis|linebreaksbr }}</dd>{% endif %}
+      {% if p.observacoes %}<dt>Observações</dt><dd>{{ p.observacoes|linebreaksbr }}</dd>{% endif %}</dl>
+      {% if not p.lida_em %}<form method="post">{% csrf_token %}<input type="hidden" name="acao" value="lida"><input type="hidden" name="id" value="{{ p.pk }}"><button class="btn btn-peq">Confirmar leitura</button></form>{% endif %}</details>
+  {% empty %}<p class="vazio">Nenhuma passagem recebida.</p>{% endfor %}</div>
+  <div class="card"><h2>Enviadas</h2><ul>{% for p in enviadas %}<li>{{ p.criado_em|date:"d/m H:i" }} → {{ p.recebe }} {% if p.lida_em %}<span class="badge badge-sucesso">lida</span>{% else %}<span class="badge badge-neutro">não lida</span>{% endif %}</li>{% empty %}<li class="muted">Nenhuma.</li>{% endfor %}</ul></div>
+</div><div>
+  <form method="post" class="card">{% csrf_token %}<h2>Passar o turno</h2>{% include "core/_campos.html" %}<button>Registrar</button></form>
+</div></div>
+{% endblock %}

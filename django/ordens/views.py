@@ -14,6 +14,7 @@ from . import services
 from .forms import AnexoForm, AtribuirForm, EditarOrdemForm, FiltroOrdensForm, MaterialForm, OrdemForm, StatusForm
 from .models import Anexo, ChecklistItem, Ordem, OrdemAgente, OrdemPatrimonio, SolicitacaoExclusao
 from .services import RegraNegocio
+from estoque.services import ErroEstoque
 
 ORDENACOES = {"recentes": "-criado_em", "antigas": "criado_em", "prazo": "prazo", "prioridade": "-peso_prioridade"}
 PESO_PRIORIDADE = Case(*[When(prioridade=p, then=Value(i)) for i, p in enumerate(["BAIXA", "MEDIA", "ALTA", "CRITICA"])],
@@ -62,10 +63,19 @@ def lista(request):
 @permissao_requerida("os.criar")
 def nova(request):
     form = OrdemForm(request.POST or None, request.FILES or None, user=request.user)
+    duplicadas = []
     if request.method == "POST" and form.is_valid():
         d = form.cleaned_data
         equipe = {"membros": list(d["equipe"]), "principal": d["asg_principal"], "supervisor": d["supervisor"]}
+        from ia.heuristica import duplicidades
+
+        duplicadas = duplicidades(d["titulo"], d["descricao"], local=d["local"], categoria=d["categoria"], minimo=0.5)
+        if duplicadas and d["ignorar_duplicidade"]:
+            d["duplicidade_referencia"] = Ordem.objects.filter(pk=duplicadas[0]["id"]).first()
         try:
+            if duplicadas and not d["ignorar_duplicidade"]:
+                raise RegraNegocio("Encontramos ordem(ns) em aberto muito parecida(s) no mesmo local. Confira abaixo; "
+                                   "se não for a mesma, marque “Não é duplicada” e envie novamente.")
             ordem = services.criar_ordem(
                 request.user, d, fotos=request.FILES.getlist("fotos"), tarefas=list(d["tarefas"]),
                 itens_livres=form.itens_livres_lista(), equipe=equipe, request=request,
@@ -75,7 +85,7 @@ def nova(request):
         else:
             messages.success(request, f"{ordem.get_tipo_display()} {ordem.numero} aberta com sucesso.")
             return redirect(ordem)
-    return render(request, "ordens/form.html", {"form": form})
+    return render(request, "ordens/form.html", {"form": form, "duplicadas": duplicadas})
 
 
 @login_required
@@ -116,8 +126,33 @@ def detalhe(request, pk):
         "token_gerado": request.session.pop(f"token_reabertura_{ordem.pk}", None),
         "tipos_foto": [t for t in Anexo.Tipo if t not in (Anexo.Tipo.DOCUMENTO,)],
         "pode_patrimonio": user.pode("patrimonio.vincular") and (gerenciar or executar) and not ordem.encerrada,
+        "qualidade": services.calcular_qualidade(ordem),
+        "reservas": ordem.reservas.select_related("material").exclude(status="CONSUMIDA"),
+        "sugestoes": _sugestoes_conhecimento(user, ordem),
+        "whatsapp": _links_whatsapp(request, ordem, user) if gerenciar or executar else [],
     }
     return render(request, "ordens/detalhe.html", contexto)
+
+
+def _sugestoes_conhecimento(user, ordem):
+    if not user.pode("conhecimento.visualizar") or ordem.encerrada:
+        return []
+    from conhecimento.services import sugestoes
+
+    return sugestoes(ordem)
+
+
+def _links_whatsapp(request, ordem, user):
+    from core import whatsapp
+
+    url_publica = request.build_absolute_uri(ordem.url_publica)
+    destinos = []
+    for pessoa, rotulo in [(ordem.agente, "Avisar responsável"), (ordem.gestor, "Avisar gestor")]:
+        if pessoa and pessoa != user and pessoa.telefone:
+            link = whatsapp.link(pessoa.telefone, whatsapp.mensagem_ordem("Ordem de serviço", ordem, url_publica))
+            if link:
+                destinos.append({"rotulo": f"{rotulo} ({pessoa.get_short_name()})", "url": link})
+    return destinos
 
 
 def _executar_acao(request, ordem):
@@ -164,9 +199,13 @@ def _executar_acao(request, ordem):
             if not form.is_valid():
                 raise RegraNegocio("Informe o material e a quantidade.")
             d = form.cleaned_data
-            services.registrar_material(ordem, user, d["nome_material"], d["quantidade"], d["unidade"],
-                                        d["custo_unitario"], d["observacao"], request)
-            messages.success(request, "Material registrado.")
+            mat = services.registrar_material(ordem, user, d["nome_material"], d["quantidade"], d["unidade"],
+                                              d["custo_unitario"], d["observacao"], request,
+                                              material_estoque=d["material_estoque"], reservar=d["reservar"])
+            if mat.situacao == "AGUARDANDO_APROVACAO":
+                messages.warning(request, "Saldo insuficiente: o consumo foi enviado para aprovação do gestor.")
+            else:
+                messages.success(request, "Material registrado.")
         elif acao == "checklist":
             item = get_object_or_404(ChecklistItem, pk=post.get("item_id"), ordem=ordem)
             services.atualizar_checklist(ordem, user, item, post.get("concluido") == "1", post.get("observacao", ""),
@@ -188,6 +227,16 @@ def _executar_acao(request, ordem):
                 messages.success(request, f"{ordem.numero} movida para a lixeira.")
                 return redirect("ordens:lista")
             messages.success(request, "Solicitação de exclusão enviada para análise.")
+        elif acao in ("consumir_reserva", "cancelar_reserva"):
+            from estoque import services as est
+
+            reserva = get_object_or_404(ordem.reservas, pk=post.get("reserva_id"))
+            if not (services.pode_gerenciar(user) or services.pode_executar(user, ordem)):
+                raise PermissionDenied
+            (est.consumir_reserva if acao == "consumir_reserva" else est.cancelar_reserva)(reserva, user)
+            services.historico(ordem, user, f"Reserva de {reserva.material.nome} "
+                               f"{'consumida' if acao == 'consumir_reserva' else 'cancelada'}.")
+            messages.success(request, "Reserva atualizada.")
         elif acao == "restaurar":
             services.restaurar(ordem, user, request)
             messages.success(request, "Ordem restaurada.")
@@ -206,7 +255,7 @@ def _executar_acao(request, ordem):
             raise RegraNegocio("Ação desconhecida.")
     except RegraNegocio as exc:
         messages.error(request, str(exc))
-    except PermissionDenied as exc:
+    except (ErroEstoque, PermissionDenied) as exc:
         messages.error(request, str(exc) or "Você não tem permissão para esta ação.")
     return redirect(ordem)
 
@@ -312,3 +361,57 @@ def publica_arquivo(request, pk, token, anexo_id, miniatura=False):
     if not anexo.eh_imagem:
         raise Http404
     return responder_arquivo(anexo.miniatura if miniatura and anexo.miniatura else anexo.arquivo)
+
+
+@permissao_requerida("checklists.gerenciar")
+def checklists(request):
+    from core.models import Categoria
+
+    from .models import ChecklistModelo, ChecklistModeloItem
+
+    if request.method == "POST":
+        acao = request.POST.get("acao")
+        if acao == "modelo":
+            cat = Categoria.objects.filter(pk=request.POST.get("categoria") or None).first()
+            nome = request.POST.get("nome", "").strip()
+            if cat and nome:
+                ChecklistModelo.objects.create(categoria=cat, nome=nome[:160], criado_por=request.user)
+                messages.success(request, "Modelo criado. A partir de agora, novas ordens dessa categoria recebem o checklist.")
+            else:
+                messages.error(request, "Informe a categoria e o nome.")
+        elif acao == "item":
+            modelo = get_object_or_404(ChecklistModelo, pk=request.POST.get("modelo_id"))
+            desc = request.POST.get("descricao", "").strip()
+            if desc:
+                ChecklistModeloItem.objects.create(modelo=modelo, descricao=desc[:255],
+                                                   obrigatorio=bool(request.POST.get("obrigatorio")),
+                                                   exige_foto=bool(request.POST.get("exige_foto")),
+                                                   posicao=modelo.itens.count() + 1)
+                messages.success(request, "Item adicionado.")
+        elif acao == "remover_item":
+            ChecklistModeloItem.objects.filter(pk=request.POST.get("item_id")).delete()
+            messages.success(request, "Item removido (ordens já abertas mantêm a cópia).")
+        elif acao == "alternar":
+            modelo = get_object_or_404(ChecklistModelo, pk=request.POST.get("modelo_id"))
+            modelo.ativo = not modelo.ativo
+            modelo.save(update_fields=["ativo"])
+        return redirect("ordens:checklists")
+    return render(request, "ordens/checklists.html", {
+        "modelos": ChecklistModelo.objects.select_related("categoria").prefetch_related("itens"),
+        "categorias": Categoria.objects.filter(ativo=True)})
+
+
+@login_required
+def assistente(request):
+    """Sugestões em tempo real na abertura da ordem (prioridade, categoria, duplicidades)."""
+    from django.http import JsonResponse
+
+    from ia.heuristica import assistir
+
+    titulo, descricao = request.GET.get("titulo", ""), request.GET.get("descricao", "")
+    if len(f"{titulo} {descricao}".strip()) < 8:
+        return JsonResponse({"ok": True, "resultado": None})
+    from core.models import Local
+
+    local = Local.objects.filter(pk=request.GET.get("local") or None).first()
+    return JsonResponse({"ok": True, "resultado": assistir(titulo, descricao, local)})

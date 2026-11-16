@@ -4,6 +4,9 @@
 <div class="cabecalho"><h1>Nova ordem</h1><p class="subtitulo">Categorias “Limpeza” geram uma Ordem de Limpeza (OL) com checklist e equipe ASG.</p></div>
 <form method="post" enctype="multipart/form-data" novalidate>{% csrf_token %}
   {% if form.non_field_errors %}<div class="msg msg-error" style="margin-bottom:1rem">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+  {% if duplicadas %}<div class="card" style="border-color:var(--alerta)"><h2>Possíveis duplicidades</h2><ul>{% for d in duplicadas %}<li><a href="{{ d.url }}" target="_blank">{{ d.numero }}</a> — {{ d.titulo }} ({{ d.status }}, {{ d.similaridade }})</li>{% endfor %}</ul>
+    <label class="checkbox">{{ form.ignorar_duplicidade }} {{ form.ignorar_duplicidade.label }}</label></div>{% endif %}
+  <div class="card" id="assistente" hidden><h2>Sugestões do assistente</h2><div id="assistente-conteudo" class="muted"></div></div>
   <div class="card"><h2>Dados da ordem</h2>
     <div class="form-grade">
       {% for f in form %}{% if f.name in "titulo,local,categoria,prioridade,prazo,valor_previsto_orcamento,descricao" %}
@@ -33,4 +36,25 @@
   </details>
   <div class="chips"><button type="submit">Abrir ordem</button><a class="btn btn-sec" href="{% url 'ordens:lista' %}">Cancelar</a></div>
 </form>
+{% endblock %}
+{% block scripts %}
+<script>
+(function(){
+  var t=document.getElementById("id_titulo"), d=document.getElementById("id_descricao"), l=document.getElementById("id_local"), timer;
+  var box=document.getElementById("assistente"), out=document.getElementById("assistente-conteudo");
+  function esc(s){var e=document.createElement("span");e.textContent=s;return e.innerHTML;}
+  function consultar(){
+    var q=new URLSearchParams({titulo:t.value,descricao:d.value,local:l.value||""});
+    fetch("{% url 'ordens:assistente' %}?"+q,{credentials:"same-origin"}).then(function(r){return r.json();}).then(function(j){
+      var r=j.resultado; if(!r){box.hidden=true;return;}
+      var h="<p>Prioridade sugerida: <strong>"+esc(r.prioridade_sugerida)+"</strong></p>";
+      if(r.categorias_sugeridas.length) h+="<p>Categorias: "+r.categorias_sugeridas.map(function(c){return esc(c.nome);}).join(", ")+"</p>";
+      if(r.materiais_sugeridos.length) h+="<p>Materiais em estoque: "+r.materiais_sugeridos.map(function(m){return esc(m.nome)+" ("+m.disponivel+")";}).join(", ")+"</p>";
+      if(r.duplicidades.length) h+="<p><strong>Parecidas em aberto:</strong> "+r.duplicidades.map(function(o){return '<a target="_blank" href="'+o.url+'">'+esc(o.numero)+"</a> "+esc(o.titulo);}).join("; ")+"</p>";
+      out.innerHTML=h; box.hidden=false;
+    }).catch(function(){});
+  }
+  [t,d,l].forEach(function(el){ if(el) el.addEventListener("input",function(){clearTimeout(timer);timer=setTimeout(consultar,700);}); });
+})();
+</script>
 {% endblock %}

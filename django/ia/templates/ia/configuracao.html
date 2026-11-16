@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block titulo %}Configurar GEOP IA{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>GEOP IA — administração</h1><p class="subtitulo">A chave da API fica somente na variável de ambiente <code>GEOP_IA_API_KEY</code> do servidor (nunca no banco). Ollama local dispensa chave.</p></div>
+<div class="grade grade-2">
+<form method="post" class="card">{% csrf_token %}<h2>Configuração</h2>
+  <label class="checkbox"><input type="checkbox" name="ia_habilitada" value="1" {% if cfg.habilitada %}checked{% endif %}> GEOP IA habilitado</label>
+  <div class="campo"><label>Provedor</label><select name="ia_provedor">{% for p in provedores %}<option value="{{ p }}" {% if cfg.provedor == p %}selected{% endif %}>{{ p }}</option>{% endfor %}</select></div>
+  <div class="campo"><label>Modelo</label><input type="text" name="ia_modelo" value="{{ cfg.modelo }}"></div>
+  <div class="campo"><label>URL base (opcional)</label><input type="text" name="ia_base_url" value="{{ cfg.base_url }}"></div>
+  <div class="campo"><label>Limite diário por usuário</label><input type="number" name="ia_limite_diario" value="{{ cfg.limite_diario }}" min="1"></div>
+  <p class="ajuda">Chave configurada: {% if cfg.chave %}sim{% else %}não{% endif %}.</p>
+  <div class="chips"><button>Salvar</button><button name="acao" value="testar" class="btn btn-sec">Testar conexão</button></div></form>
+<div class="card"><h2>Uso (30 dias)</h2><dl class="dados"><dt>Execuções</dt><dd>{{ estat.total }}</dd><dt>Com erro</dt><dd>{{ estat.erros }}</dd><dt>Tempo médio</dt><dd>{{ estat.media|default:0|floatformat:0 }} ms</dd></dl>
+  <h3>Por usuário</h3><ul>{% for u in por_usuario %}<li>{{ u.usuario__nome }}: {{ u.n }}</li>{% endfor %}</ul>
+  {% if erros %}<h3>Erros recentes</h3><ul>{% for e in erros %}<li class="muted">{{ e.criado_em|date:"d/m H:i" }} — {{ e.erro|truncatechars:120 }}</li>{% endfor %}</ul>{% endif %}</div>
+</div>
+{% endblock %}

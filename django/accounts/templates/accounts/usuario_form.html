@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block titulo %}Usuário{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>{% if obj %}{{ obj.nome }}{% else %}Novo usuário{% endif %}</h1>
+  {% if obj %}<div class="acoes"><form method="post">{% csrf_token %}<button name="acao" value="convite" class="btn btn-sec">Gerar link para criar senha</button>{% if obj.totp_ativo %} <button name="acao" value="reset_2fa" class="btn btn-sec" onclick="return confirm('Desativar o 2FA deste usuário?')">Desativar 2FA</button>{% endif %}</form></div>{% endif %}</div>
+<form method="post" class="card" novalidate>{% csrf_token %}{% include "core/_campos.html" %}<div class="chips"><button>Salvar</button><a class="btn btn-sec" href="{% url 'accounts:usuarios' %}">Cancelar</a></div></form>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}{% load geop %}
+{% block titulo %}Custos · {{ ordem.numero }}{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Custos da {{ ordem.numero }}</h1><div class="acoes"><a class="btn btn-sec" href="{% url 'ordens:detalhe' ordem.pk %}">Voltar à ordem</a></div><p class="subtitulo">{{ ordem.titulo }}</p></div>
+<div class="kpis">
+  <div class="kpi"><div class="valor">R$ {{ ordem.valor_previsto_orcamento|default:0|floatformat:2 }}</div><div class="rotulo">Orçamento previsto</div></div>
+  <div class="kpi"><div class="valor">R$ {{ ordem.custo_materiais|floatformat:2 }}</div><div class="rotulo">Materiais</div></div>
+  <div class="kpi"><div class="valor">R$ {{ ordem.custo_mao_obra|floatformat:2 }}</div><div class="rotulo">Mão de obra</div></div>
+  <div class="kpi"><div class="valor">R$ {{ ordem.custo_terceiros|floatformat:2 }}</div><div class="rotulo">Terceiros e outros</div></div>
+  <div class="kpi {% if ordem.valor_previsto_orcamento and ordem.custo_total_final > ordem.valor_previsto_orcamento %}perigo{% else %}sucesso{% endif %}"><div class="valor">R$ {{ ordem.custo_total_final|floatformat:2 }}</div><div class="rotulo">Custo total</div></div></div>
+<div class="detalhe-layout"><div>
+  <div class="card"><h2>Lançamentos</h2><div class="tabela-wrap"><table><tr><th>Data</th><th>Tipo</th><th>Fornecedor / doc.</th><th>Valor</th><th></th></tr>
+    {% for c in custos %}<tr><td>{{ c.criado_em|date:"d/m/Y" }}</td><td>{{ c.get_tipo_display }}<span class="sub">{{ c.descricao }}</span></td><td>{{ c.fornecedor }} {{ c.documento }}{% if c.arquivo %}<span class="sub"><a href="{% url 'estoque:custo_arquivo' c.pk %}" target="_blank">comprovante</a></span>{% endif %}</td>
+      <td>R$ {{ c.valor|floatformat:2 }}</td><td><form method="post" data-confirmar="Remover este custo?">{% csrf_token %}<input type="hidden" name="acao" value="remover"><input type="hidden" name="custo_id" value="{{ c.pk }}"><button class="btn-link">remover</button></form></td></tr>
+    {% empty %}<tr><td colspan="5" class="vazio">Nenhum custo lançado.</td></tr>{% endfor %}</table></div></div>
+  <div class="card"><h2>Materiais da ordem</h2><div class="tabela-wrap"><table>{% for m in materiais %}<tr><td>{{ m.nome_material }}</td><td>{{ m.quantidade|floatformat:"-2" }} {{ m.unidade }}</td><td>R$ {{ m.custo_total|floatformat:2 }}</td><td>{{ m.get_situacao_display }}</td></tr>{% empty %}<tr><td class="vazio">Nenhum material.</td></tr>{% endfor %}</table></div></div>
+</div><div>
+  <form method="post" enctype="multipart/form-data" class="card">{% csrf_token %}<h2>Novo custo</h2>{% include "core/_campos.html" %}<button>Lançar</button></form>
+  <form method="post" class="card">{% csrf_token %}<input type="hidden" name="acao" value="orcamento"><h2>Orçamento previsto</h2><div class="campo"><input type="text" name="valor_previsto" inputmode="decimal" value="{{ ordem.valor_previsto_orcamento|default:'' }}"></div><button class="btn btn-sec">Salvar</button></form>
+</div></div>
+{% endblock %}

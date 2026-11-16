@@ -11,6 +11,14 @@ urlpatterns = [
     path("limpeza/", include("limpeza.urls")),
     path("ambientes/", include("ambientes.urls")),
     path("patrimonio/", include("patrimonio.urls")),
+    path("estoque/", include("estoque.urls")),
+    path("operacao/", include("operacao.urls")),
+    path("conhecimento/", include("conhecimento.urls")),
+    path("relatorios/", include("relatorios.urls")),
+    path("cftv/", include("cftv.urls")),
+    path("chat/", include("chat.urls")),
+    path("ia/", include("ia.urls")),
+    path("iot/", include("iot.urls")),
     path("", include("core.urls")),
 ]
 

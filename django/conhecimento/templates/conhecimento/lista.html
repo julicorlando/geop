@@ -1,0 +1,16 @@
+{% extends "base.html" %}{% load geop %}
+{% block titulo %}Base de conhecimento{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Base de conhecimento</h1>
+  <div class="acoes">{% if user|pode:"conhecimento.gerenciar" %}<a class="btn" href="{% url 'conhecimento:novo' %}">+ Artigo</a>{% endif %}</div>
+  <p class="subtitulo">Procedimentos e soluções já aplicadas. Ordens encerradas com a solução descrita viram artigos automaticamente.</p></div>
+<form class="card filtros" method="get">
+  <div class="campo"><label>Buscar</label><input type="search" name="q" value="{{ q }}" placeholder="Ex.: disjuntor, vazamento"></div>
+  <div class="campo"><label>Categoria</label><select name="categoria"><option value="">Todas</option>{% for c in categorias %}<option value="{{ c.pk }}" {% if categoria.pk == c.pk %}selected{% endif %}>{{ c.nome }}</option>{% endfor %}</select></div>
+  <div class="campo"><button>Buscar</button></div></form>
+<div class="card"><div class="tabela-wrap"><table>
+  {% for a in pagina %}<tr><td><a href="{{ a.get_absolute_url }}"><strong>{{ a.titulo }}</strong></a><span class="sub">{{ a.conteudo|truncatechars:140 }}</span></td>
+    <td>{{ a.categoria|default:"—" }}</td><td>{% badge_status a %}</td><td class="muted">👍 {{ a.uteis }} · 👎 {{ a.nao_uteis }}</td></tr>
+  {% empty %}<tr><td class="vazio">Nenhum artigo encontrado.</td></tr>{% endfor %}
+</table></div>{% include "core/_paginacao.html" %}</div>
+{% endblock %}

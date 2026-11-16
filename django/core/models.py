@@ -138,3 +138,61 @@ class ArquivoBase(models.Model):
             )
             if not em_uso:
                 campo.storage.delete(campo.name)
+
+
+class Configuracao(models.Model):
+    """Parâmetros ajustáveis pela tela (equivalente a `sistema_configuracoes` do PHP)."""
+
+    chave = models.CharField(max_length=80, primary_key=True)
+    valor = models.TextField(blank=True)
+    atualizado_por = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "configuração"
+        verbose_name_plural = "configurações"
+
+    PADROES = {
+        "chat_habilitado": "1",
+        "ia_habilitada": "0",
+        "ia_limite_diario": "40",
+        "os_sem_atualizacao_horas": "48",
+        "sla_alerta_horas": "6",
+        "relatorios_limite_gestor": "10",
+    }
+
+    @classmethod
+    def obter(cls, chave, padrao=None):
+        obj = cls.objects.filter(pk=chave).first()
+        if obj is not None:
+            return obj.valor
+        return cls.PADROES.get(chave, padrao)
+
+    @classmethod
+    def obter_int(cls, chave, padrao=0):
+        try:
+            return int(cls.obter(chave, padrao))
+        except (TypeError, ValueError):
+            return padrao
+
+    @classmethod
+    def obter_bool(cls, chave):
+        return str(cls.obter(chave, "0")).strip().lower() in {"1", "true", "sim", "on"}
+
+    @classmethod
+    def definir(cls, chave, valor, usuario=None):
+        cls.objects.update_or_create(pk=chave, defaults={"valor": str(valor), "atualizado_por": usuario})
+
+
+class ExecucaoRotina(models.Model):
+    """Registro das rotinas automáticas (cron) e backups."""
+
+    comando = models.CharField(max_length=80, db_index=True)
+    status = models.CharField(max_length=20, default="OK")
+    iniciado_em = models.DateTimeField(default=timezone.now)
+    finalizado_em = models.DateTimeField(null=True, blank=True)
+    resumo = models.JSONField(default=dict, blank=True)
+    erro = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-iniciado_em"]

@@ -1,0 +1,16 @@
+{% extends "base.html" %}{% load geop %}
+{% block titulo %}CFTV{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>CFTV</h1>
+  <div class="acoes">{% if user|pode:"controle_acesso.registrar" %}<a class="btn btn-sec" href="{% url 'cftv:controle' %}">Portaria (QR)</a>{% endif %}
+    {% if user|pode:"cftv.liberacoes" %}<a class="btn btn-sec" href="{% url 'cftv:liberacoes' %}">Liberações</a>{% endif %}
+    {% if user|pode:"cftv.historico" %}<a class="btn btn-sec" href="{% url 'cftv:historico' %}">Histórico de acessos</a>{% endif %}
+    {% if pode_operar %}<form method="post" class="chips">{% csrf_token %}<input type="hidden" name="acao" value="criar"><select name="turno">{% for v, r in turnos %}<option value="{{ v }}">{{ r }}</option>{% endfor %}</select><button>Abrir plantão de hoje</button></form>{% endif %}</div></div>
+<div class="detalhe-layout"><div>
+  <div class="card"><h2>Relatórios de plantão</h2><div class="tabela-wrap"><table><tr><th>Plantão</th><th>Operador</th><th>Ocorrências</th><th>Status</th></tr>
+  {% for r in relatorios %}<tr><td><a href="{{ r.get_absolute_url }}">{{ r.data_plantao|date:"d/m/Y" }} · {{ r.get_turno_display }}</a></td><td>{{ r.operador }}</td><td>{{ r.n_ocorrencias }}</td><td>{% badge_status r %}</td></tr>
+  {% empty %}<tr><td colspan="4" class="vazio">Nenhum relatório.</td></tr>{% endfor %}</table></div>{% include "core/_paginacao.html" with pagina=relatorios %}</div>
+</div><div>
+  <div class="card"><h2>Liberações de hoje</h2><ul>{% for l in liberacoes_hoje %}<li><strong>{{ l.nome_completo }}</strong> — {{ l.destino_nome }}<span class="sub">{{ l.hora_inicio|time:"H:i"|default:"dia todo" }}{% if l.hora_fim %}–{{ l.hora_fim|time:"H:i" }}{% endif %}</span></li>{% empty %}<li class="muted">Nenhuma.</li>{% endfor %}</ul></div>
+</div></div>
+{% endblock %}

@@ -13,6 +13,8 @@
   </div>
   <div class="acoes nao-imprimir">
     <a class="btn btn-sec" href="{% url 'ordens:imprimir' ordem.pk %}" target="_blank">Imprimir</a>
+    {% if user|pode:"custos.gerenciar" %}<a class="btn btn-sec" href="{% url 'estoque:custos' ordem.pk %}">Custos</a>{% endif %}
+    {% for w in whatsapp %}<a class="btn btn-sec" href="{{ w.url }}" target="_blank" rel="noopener">WhatsApp: {{ w.rotulo }}</a>{% endfor %}
     {% if gerenciar %}<button class="btn btn-sec" type="button" onclick="navigator.clipboard.writeText(location.origin + '{{ ordem.url_publica }}').then(()=>alert('Link público copiado. Envie ao agente/terceiro.'))">Copiar link público</button>{% endif %}
   </div>
 </div>
@@ -46,6 +48,10 @@
         {% if ordem.data_encerramento %}<dt>Encerrada</dt><dd>{{ ordem.data_encerramento|date:"d/m/Y H:i" }} por {{ ordem.aprovado_por }}{% if ordem.observacao_aprovacao %} — {{ ordem.observacao_aprovacao }}{% endif %}</dd>{% endif %}
         {% if ordem.valor_previsto_orcamento %}<dt>Orçamento previsto</dt><dd>R$ {{ ordem.valor_previsto_orcamento|floatformat:2 }}</dd>{% endif %}
         {% if ordem.custo_materiais %}<dt>Custo de materiais</dt><dd>R$ {{ ordem.custo_materiais|floatformat:2 }}</dd>{% endif %}
+        {% if ordem.custo_total_final %}<dt>Custo total</dt><dd>R$ {{ ordem.custo_total_final|floatformat:2 }}</dd>{% endif %}
+        {% if ordem.preventiva %}<dt>Preventiva</dt><dd>{{ ordem.preventiva }}</dd>{% endif %}
+        <dt>Qualidade</dt><dd><span class="badge {% if qualidade.0 >= 80 %}badge-sucesso{% elif qualidade.0 >= 50 %}badge-alerta{% else %}badge-perigo{% endif %}">{{ qualidade.0 }}%</span>
+          <details style="display:inline"><summary class="muted" style="display:inline;cursor:pointer"> ver critérios</summary><ul>{% for c in qualidade.1 %}<li>{% if c.ok %}✅{% else %}⬜{% endif %} {{ c.rotulo }}</li>{% endfor %}</ul></details></dd>
       </dl>
     </div>
 
@@ -95,10 +101,14 @@
     <div class="card"><h2>Materiais</h2>
       <div class="tabela-wrap"><table>
         <tr><th>Material</th><th>Qtd.</th><th>Custo</th><th>Registrado</th></tr>
-        {% for m in materiais %}<tr><td>{{ m.nome_material }}{% if m.observacao %}<span class="sub">{{ m.observacao }}</span>{% endif %}</td><td>{{ m.quantidade|floatformat:"-2" }} {{ m.unidade }}</td>
+        {% for m in materiais %}<tr><td>{{ m.nome_material }}{% if m.situacao != "CONSUMIDO" and m.situacao != "AVULSO" %} <span class="badge badge-alerta">{{ m.get_situacao_display|lower }}</span>{% endif %}{% if m.observacao %}<span class="sub">{{ m.observacao }}</span>{% endif %}</td><td>{{ m.quantidade|floatformat:"-2" }} {{ m.unidade }}</td>
           <td>{% if m.custo_unitario %}R$ {{ m.custo_total|floatformat:2 }}{% else %}—{% endif %}</td><td class="muted">{{ m.usuario|default:"" }} {{ m.criado_em|date:"d/m H:i" }}</td></tr>
         {% empty %}<tr><td colspan="4" class="vazio">Nenhum material registrado.</td></tr>{% endfor %}
       </table></div>
+      {% for r in reservas %}<form method="post" class="chips" style="align-items:center;margin-top:.4rem">{% csrf_token %}<input type="hidden" name="reserva_id" value="{{ r.pk }}">
+        <span style="flex:1">{{ r.material.nome }} — {{ r.quantidade|floatformat:"-2" }} · <strong>{{ r.get_status_display }}</strong></span>
+        {% if atualizar and r.status == "RESERVADA" %}<button name="acao" value="consumir_reserva" class="btn btn-peq">Dar baixa</button>{% endif %}
+        {% if atualizar and r.status == "RESERVADA" or atualizar and r.status == "APROVACAO_NEGATIVO" %}<button name="acao" value="cancelar_reserva" class="btn btn-sec btn-peq">Cancelar</button>{% endif %}</form>{% endfor %}
       {% if atualizar and not ordem.encerrada and not ordem.excluida_em %}
       <details class="painel nao-imprimir" style="margin-top:.8rem"><summary>Registrar material</summary>
         <form method="post">{% csrf_token %}<input type="hidden" name="acao" value="material">{% include "core/_campos.html" with form=material_form %}<button>Registrar</button></form>
@@ -176,6 +186,8 @@
       {% endif %}
     </details>
     {% endif %}{% endif %}
+
+    {% if sugestoes %}<div class="card"><h2>Soluções parecidas</h2><ul>{% for a in sugestoes %}<li><a href="{{ a.get_absolute_url }}" target="_blank">{{ a.titulo }}</a></li>{% endfor %}</ul></div>{% endif %}
 
     <div class="card"><h2>Histórico</h2>
       <ul class="linha-tempo">

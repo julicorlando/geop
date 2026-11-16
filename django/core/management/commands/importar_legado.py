@@ -36,6 +36,8 @@ from limpeza.models import OrganogramaNo, PlanoGrupo, PlanoTarefa
 from ordens.models import (Anexo, ChecklistItem, Historico, Material, NumeroSequencia, Ordem, OrdemAgente,
                            OrdemPatrimonio, ParticipanteLimpeza, SolicitacaoExclusao)
 
+from ._legado_modulos import EtapasModulos
+
 STATUS_VALIDOS = {s for s, _ in Ordem._meta.get_field("status").choices}
 
 
@@ -61,8 +63,8 @@ def boolv(valor):
     return bool(int(valor)) if str(valor).strip().lstrip("-").isdigit() else bool(valor)
 
 
-class Command(BaseCommand):
-    help = "Importa usuários, cadastros, ordens (OS/OL), fotos, limpeza e ambientes QR do GEOP em PHP."
+class Command(EtapasModulos, BaseCommand):
+    help = "Importa todo o GEOP em PHP: usuários, ordens, fotos, limpeza, ambientes, estoque, CFTV, chat, IoT…"
 
     def add_arguments(self, parser):
         parser.add_argument("--uploads", help="Pasta `public` do PHP (que contém `uploads/`).")
@@ -85,9 +87,14 @@ class Command(BaseCommand):
         etapas = [
             ("Setores", self.setores), ("Perfis", self.perfis), ("Usuários", self.usuarios),
             ("Locais e categorias", self.cadastros), ("Organograma e plano da limpeza", self.limpeza),
-            ("Ordens", self.ordens), ("Equipe, histórico, materiais e checklist", self.detalhes_ordens),
+            ("Preventivas", self.preventivas), ("Ordens", self.ordens), ("Custos, qualidade e vínculos das ordens", self.ordens_extras),
+            ("Equipe, histórico, materiais e checklist", self.detalhes_ordens),
             ("Anexos e fotos das ordens", self.anexos), ("Patrimônios vinculados", self.patrimonios),
-            ("Exclusões", self.exclusoes), ("Ambientes QR", self.ambientes), ("Notificações e auditoria", self.logs),
+            ("Exclusões", self.exclusoes), ("Ambientes QR", self.ambientes),
+            ("Estoque, compras e custos", self.estoque), ("Checklists por categoria", self.checklists),
+            ("Equipe, escalas e cronograma", self.operacao), ("Base de conhecimento", self.conhecimento),
+            ("CFTV e controle de acesso", self.cftv), ("Chat", self.chat), ("IoT e rede", self.iot),
+            ("Notificações e auditoria", self.logs),
         ]
         for nome, func in etapas:
             self.stdout.write(f"→ {nome}…")
@@ -511,7 +518,8 @@ class Command(BaseCommand):
                     seq.save()
         modelos = [Setor, Usuario, Local, Categoria, OrganogramaNo, PlanoGrupo, PlanoTarefa, Ordem, OrdemAgente,
                    Historico, Material, ChecklistItem, ParticipanteLimpeza, Anexo, OrdemPatrimonio, SolicitacaoExclusao,
-                   AmbienteAcao, Ambiente, Registro, RegistroItem, RegistroResponsavel, Validacao, RegistroFoto]
+                   AmbienteAcao, Ambiente, Registro, RegistroItem, RegistroResponsavel, Validacao, RegistroFoto,
+                   *self.MODELOS_SEQUENCIA]
         sqls = connection.ops.sequence_reset_sql(no_style(), modelos)
         if sqls:
             with connection.cursor() as cur:

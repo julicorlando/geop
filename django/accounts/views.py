@@ -45,9 +45,133 @@ class LoginView(auth_views.LoginView):
 
     def form_valid(self, form):
         cache.delete(_chave_bloqueio(self.request))
+        user = form.get_user()
+        if user.totp_ativo:
+            # Segunda etapa: a sessão só é aberta depois do código do autenticador.
+            self.request.session["2fa_usuario"] = user.pk
+            self.request.session["2fa_backend"] = user.backend
+            self.request.session["2fa_next"] = self.get_success_url()
+            return redirect("accounts:dois_fatores")
         resposta = super().form_valid(form)
-        auditar(self.request, "usuario", self.request.user.pk, "LOGIN")
+        _registrar_login(self.request)
         return resposta
+
+
+def _registrar_login(request):
+    Usuario.objects.filter(pk=request.user.pk).update(ultimo_login_ip=request.META.get("REMOTE_ADDR") or None)
+    auditar(request, "usuario", request.user.pk, "LOGIN")
+
+
+def dois_fatores(request):
+    from django.contrib.auth import login
+    from django.utils.http import url_has_allowed_host_and_scheme
+
+    from . import totp
+
+    uid = request.session.get("2fa_usuario")
+    if not uid:
+        return redirect("accounts:login")
+    user = Usuario.objects.filter(pk=uid, is_active=True).first()
+    if not user:
+        return redirect("accounts:login")
+    erro = ""
+    if request.method == "POST":
+        chave = f"2fa:{uid}"
+        tentativas = cache.get(chave, 0)
+        if tentativas >= settings.LOGIN_MAX_TENTATIVAS:
+            erro = "Muitas tentativas. Entre novamente mais tarde."
+        elif totp.verificar(totp.decifrar(user.totp_segredo), request.POST.get("codigo", "")):
+            cache.delete(chave)
+            destino = request.session.pop("2fa_next", "/")
+            backend = request.session.pop("2fa_backend", None)
+            request.session.pop("2fa_usuario", None)
+            login(request, user, backend=backend)
+            _registrar_login(request)
+            if not url_has_allowed_host_and_scheme(destino, allowed_hosts={request.get_host()}):
+                destino = "/"
+            return redirect(destino)
+        else:
+            cache.set(chave, tentativas + 1, settings.LOGIN_BLOQUEIO_MINUTOS * 60)
+            auditar(request, "usuario", user.pk, "2FA_FALHA", usuario=user)
+            erro = "Código inválido."
+    return render(request, "accounts/dois_fatores.html", {"erro": erro})
+
+
+@login_required
+def seguranca(request):
+    from . import totp
+
+    user = request.user
+    segredo_pendente = request.session.get("2fa_novo_segredo")
+    if request.method == "POST":
+        acao = request.POST.get("acao")
+        if acao == "iniciar":
+            request.session["2fa_novo_segredo"] = totp.novo_segredo()
+        elif acao == "confirmar" and segredo_pendente:
+            if totp.verificar(segredo_pendente, request.POST.get("codigo", "")):
+                user.totp_segredo, user.totp_ativo = totp.cifrar(segredo_pendente), True
+                user.save(update_fields=["totp_segredo", "totp_ativo"])
+                request.session.pop("2fa_novo_segredo", None)
+                auditar(request, "usuario", user.pk, "2FA_ATIVADO")
+                messages.success(request, "Verificação em duas etapas ativada.")
+            else:
+                messages.error(request, "Código incorreto. Confira o horário do celular e tente de novo.")
+        elif acao == "desativar":
+            if user.check_password(request.POST.get("senha", "")) and totp.verificar(
+                    totp.decifrar(user.totp_segredo), request.POST.get("codigo", "")):
+                user.totp_segredo, user.totp_ativo = "", False
+                user.save(update_fields=["totp_segredo", "totp_ativo"])
+                auditar(request, "usuario", user.pk, "2FA_DESATIVADO")
+                messages.success(request, "Verificação em duas etapas desativada.")
+            else:
+                messages.error(request, "Senha ou código incorretos.")
+        return redirect("accounts:seguranca")
+    from core.models import AuditoriaEvento
+
+    return render(request, "accounts/seguranca.html", {
+        "segredo": segredo_pendente, "uri": totp.uri(user.email, segredo_pendente) if segredo_pendente else "",
+        "acessos": AuditoriaEvento.objects.filter(usuario=user, acao__in=["LOGIN", "2FA_FALHA", "ALTERAR_SENHA",
+                                                                         "2FA_ATIVADO", "2FA_DESATIVADO"])[:15]})
+
+
+def ativar(request, token):
+    """Link de convite: o próprio usuário define a senha."""
+    import hashlib
+
+    from django.contrib.auth.forms import SetPasswordForm
+
+    from .models import Convite
+
+    conv = Convite.objects.select_related("usuario").filter(
+        token_hash=hashlib.sha256(token.encode()).hexdigest()).first()
+    if not conv or not conv.valido or not conv.usuario.is_active:
+        return render(request, "accounts/convite_invalido.html", status=404)
+    form = SetPasswordForm(conv.usuario, request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        user = form.save()
+        user.forcar_troca_senha = False
+        user.senha_alterada_em = timezone.now()
+        user.save(update_fields=["forcar_troca_senha", "senha_alterada_em"])
+        conv.usado_em = timezone.now()
+        conv.save(update_fields=["usado_em"])
+        auditar(request, "usuario", user.pk, "CONVITE_USADO", usuario=user)
+        messages.success(request, "Senha criada. Entre com seu e-mail e a nova senha.")
+        return redirect("accounts:login")
+    return render(request, "accounts/ativar.html", {"form": form, "usuario": conv.usuario})
+
+
+def criar_convite(usuario, gerado_por, horas=72):
+    import hashlib
+    import secrets
+    from datetime import timedelta
+
+    from .models import Convite
+
+    usuario.convites.filter(usado_em__isnull=True, invalidado_em__isnull=True).update(invalidado_em=timezone.now())
+    token = secrets.token_urlsafe(32)
+    Convite.objects.create(usuario=usuario, token_hash=hashlib.sha256(token.encode()).hexdigest(), gerado_por=gerado_por,
+                           expira_em=timezone.now() + timedelta(hours=horas))
+    return token
 
 
 class LogoutView(auth_views.LogoutView):
@@ -87,6 +211,14 @@ def usuarios(request):
 @permissao_requerida("usuarios.gerenciar")
 def usuario_form(request, pk=None):
     obj = get_object_or_404(Usuario, pk=pk) if pk else None
+    if request.method == "POST" and obj and request.POST.get("acao") in ("convite", "reset_2fa"):
+        if request.POST["acao"] == "reset_2fa":
+            obj.totp_segredo, obj.totp_ativo = "", False
+            obj.save(update_fields=["totp_segredo", "totp_ativo"])
+            auditar(request, "usuario", obj.pk, "2FA_REDEFINIDO")
+            messages.success(request, f"2FA de {obj.nome} desativado.")
+            return redirect("accounts:usuario_editar", pk=obj.pk)
+        return _mostrar_convite(request, obj)
     form = UsuarioForm(request.POST or None, instance=obj)
     if request.method == "POST" and form.is_valid():
         if obj and obj.pk == request.user.pk and not form.cleaned_data["is_active"]:
@@ -99,13 +231,32 @@ def usuario_form(request, pk=None):
             user.save()
             auditar(request, "usuario", user.pk, "CRIAR" if novo else "EDITAR", "perfil", None, user.perfil_codigo)
             messages.success(request, f"Usuário {user.nome} salvo.")
+            if novo and form.cleaned_data.get("enviar_convite"):
+                return _mostrar_convite(request, user)
             return redirect("accounts:usuarios")
-    return render(request, "core/form_simples.html", {"form": form, "titulo": "Usuário", "voltar": "accounts:usuarios"})
+    return render(request, "accounts/usuario_form.html", {"form": form, "obj": obj})
+
+
+def _mostrar_convite(request, usuario):
+    from django.core.mail import send_mail
+    from django.urls import reverse
+
+    token = criar_convite(usuario, request.user)
+    link = request.build_absolute_uri(reverse("accounts:ativar", args=[token]))
+    enviado = False
+    try:
+        enviado = bool(send_mail(f"Seu acesso ao GEOP — {settings.GEOP_NOME_UNIDADE}",
+                                 f"Olá, {usuario.nome}.\n\nCrie sua senha em até 72 horas:\n{link}\n", None,
+                                 [usuario.email], fail_silently=True))
+    except Exception:
+        enviado = False
+    auditar(request, "usuario", usuario.pk, "CONVITE_GERADO")
+    return render(request, "accounts/convite.html", {"usuario": usuario, "link": link, "enviado": enviado})
 
 
 @permissao_requerida("perfis.gerenciar")
 def perfis(request):
-    lista = Perfil.objects.annotate(n_usuarios=Count("usuarios"), n_permissoes=Count("permissoes", distinct=True))
+    lista = Perfil.objects.annotate(n_usuarios=Count("usuarios"), n_permissoes=Count("permissoes", distinct=True)).order_by("nome")
     return render(request, "accounts/perfis.html", {"perfis": lista})
 
 

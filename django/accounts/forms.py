@@ -23,6 +23,8 @@ class UsuarioForm(forms.ModelForm):
     senha = forms.CharField(label="Senha", required=False, strip=False, widget=forms.PasswordInput(render_value=False),
                             help_text="Obrigatória para novos usuários. Em branco mantém a atual.")
     forcar_troca_senha = forms.BooleanField(label="Exigir troca de senha no próximo login", required=False, initial=True)
+    enviar_convite = forms.BooleanField(label="Sem senha: gerar link de convite para o próprio usuário criar a senha",
+                                        required=False)
 
     class Meta:
         model = Usuario
@@ -43,8 +45,8 @@ class UsuarioForm(forms.ModelForm):
     def clean(self):
         dados = super().clean()
         senha = dados.get("senha")
-        if not self.instance.pk and not senha:
-            self.add_error("senha", "Informe uma senha inicial.")
+        if not self.instance.pk and not senha and not dados.get("enviar_convite"):
+            self.add_error("senha", "Informe uma senha inicial ou marque o envio de convite.")
         if senha:
             tmp = self.instance if self.instance.pk else Usuario(nome=dados.get("nome", ""), email=dados.get("email", ""))
             try:
@@ -57,6 +59,8 @@ class UsuarioForm(forms.ModelForm):
         user = super().save(commit=False)
         if self.cleaned_data.get("senha"):
             user.set_password(self.cleaned_data["senha"])
+        elif not user.pk:
+            user.set_unusable_password()
         if commit:
             user.save()
         return user

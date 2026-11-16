@@ -22,7 +22,7 @@ from .models import Ambiente, AmbienteAcao, AmbienteAcaoVinculo, Registro, Regis
 @permissao_requerida("ambientes.visualizar", "ambientes.gerenciar")
 def lista(request):
     ambientes = Ambiente.objects.select_related("local").annotate(
-        pendentes=Count("registros", filter=Q(registros__status=Registro.Status.AGUARDANDO_VALIDACAO)))
+        pendentes=Count("registros", filter=Q(registros__status=Registro.Status.AGUARDANDO_VALIDACAO))).order_by("nome_publico")
     for a in ambientes:
         a.estado = a.estado_atual()
     return render(request, "ambientes/lista.html", {"ambientes": ambientes, "acoes": AmbienteAcao.objects.all()})
@@ -155,7 +155,7 @@ def relatorios(request):
         validadas=Count("registros", filter=filtro & Q(registros__status=Registro.Status.VALIDADA)),
         reprovadas=Count("registros", filter=filtro & Q(registros__status__in=["REPROVADA", "CORRECAO_SOLICITADA"])),
         pendentes=Count("registros", filter=filtro & Q(registros__status=Registro.Status.AGUARDANDO_VALIDACAO)),
-    )
+    ).order_by("nome_publico")
     return render(request, "ambientes/relatorios.html", {"linhas": linhas, "dias": dias})
 
 

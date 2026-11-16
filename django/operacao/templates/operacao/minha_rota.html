@@ -1,0 +1,20 @@
+{% extends "base.html" %}{% load geop %}
+{% block titulo %}Minha rota{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Minha rota</h1><p class="subtitulo">Suas ordens ativas, das mais urgentes para as menos urgentes.</p></div>
+{% if cronograma %}<div class="card"><h2>Hoje no cronograma</h2><ul>{% for c in cronograma %}<li>{{ c.hora_inicio|time:"H:i" }} — {{ c.titulo }}{% if c.local %} ({{ c.local }}){% endif %} · {{ c.get_status_display }}</li>{% endfor %}</ul></div>{% endif %}
+{% for o in ordens %}
+<div class="card">
+  <div class="card-titulo"><h2><a href="{% url 'ordens:detalhe' o.pk %}">{{ o.numero }}</a> · {{ o.titulo }}</h2></div>
+  <div class="chips" style="margin-bottom:.5rem">{% badge_status o %} {% badge_prioridade o %}<span class="badge badge-neutro">{{ o.local }}</span>{% if o.prazo %}<span class="badge {% if o.atrasada %}badge-perigo{% else %}badge-neutro{% endif %}">prazo {{ o.prazo|date:"d/m H:i" }}</span>{% endif %}</div>
+  <p class="muted" style="margin-top:0">{{ o.descricao|truncatechars:180 }}</p>
+  <div class="grade grade-2">
+    <form method="post" class="chips">{% csrf_token %}<input type="hidden" name="acao" value="status"><input type="hidden" name="ordem_id" value="{{ o.pk }}">
+      <select name="status" style="max-width:220px">{% for v, r in status_agente %}<option value="{{ v }}">{{ r }}</option>{% endfor %}</select><input type="text" name="obs" placeholder="Observação" style="max-width:200px"><button class="btn btn-peq">Atualizar</button></form>
+    <form method="post" enctype="multipart/form-data" class="chips">{% csrf_token %}<input type="hidden" name="acao" value="foto"><input type="hidden" name="ordem_id" value="{{ o.pk }}">
+      <select name="tipo" style="max-width:110px">{% for v, r in tipos_foto %}<option value="{{ v }}" {% if v == "FOTO_DEPOIS" %}selected{% endif %}>{{ r }}</option>{% endfor %}</select>
+      <input type="file" name="fotos" accept="image/*" capture="environment" multiple required style="max-width:220px"><button class="btn btn-sec btn-peq">Enviar fotos</button></form>
+  </div>
+</div>
+{% empty %}<div class="card vazio">Nenhuma ordem ativa para você. 👍</div>{% endfor %}
+{% endblock %}

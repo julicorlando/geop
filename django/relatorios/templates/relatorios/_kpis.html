@@ -1,0 +1,10 @@
+<div class="kpis">
+  <div class="kpi"><div class="valor">{{ k.total }}</div><div class="rotulo">Ordens no filtro</div></div>
+  <div class="kpi"><div class="valor">{{ k.abertas }}</div><div class="rotulo">Em aberto</div></div>
+  <div class="kpi sucesso"><div class="valor">{{ k.taxa_conclusao }}%</div><div class="rotulo">Taxa de conclusão</div></div>
+  <div class="kpi perigo"><div class="valor">{{ k.atrasadas }}</div><div class="rotulo">Atrasadas agora</div></div>
+  <div class="kpi"><div class="valor">{% if k.sla_cumprido is not None %}{{ k.sla_cumprido }}%{% else %}—{% endif %}</div><div class="rotulo">Encerradas dentro do SLA</div></div>
+  <div class="kpi"><div class="valor">{% if k.tempo_medio_horas is not None %}{{ k.tempo_medio_horas }} h{% else %}—{% endif %}</div><div class="rotulo">Tempo médio até encerrar</div></div>
+  <div class="kpi alerta"><div class="valor">{{ k.essenciais }}</div><div class="rotulo">Serviços essenciais / críticos</div></div>
+  <div class="kpi"><div class="valor">R$ {{ k.custo_total|floatformat:2 }}</div><div class="rotulo">Custo total</div></div>
+</div>

@@ -60,6 +60,14 @@ INSTALLED_APPS = [
     "ordens",
     "ambientes",
     "patrimonio",
+    "estoque",
+    "operacao",
+    "conhecimento",
+    "relatorios",
+    "cftv",
+    "chat",
+    "ia",
+    "iot",
 ]
 
 MIDDLEWARE = [
@@ -196,9 +204,29 @@ GEOP_FOTOS_POR_ENVIO = env_int("GEOP_FOTOS_POR_ENVIO", 10)
 GEOP_NOME_UNIDADE = env("GEOP_NOME_UNIDADE", "Shopping Carpina")
 # Mesmo valor de APP_PUBLIC_SHARE_SECRET do PHP mantém válidos os links públicos já enviados.
 GEOP_PUBLIC_SHARE_SECRET = env("GEOP_PUBLIC_SHARE_SECRET") or SECRET_KEY
+# Assinatura das credenciais QR de acesso. Use o valor de `qr_secret` (tabela cftv_acesso_config do PHP)
+# para que QR Codes já emitidos continuem válidos.
+GEOP_QR_SECRET = env("GEOP_QR_SECRET") or SECRET_KEY
 GEOP_SLA_HORAS = {"BAIXA": 72, "MEDIA": 48, "ALTA": 24, "CRITICA": 4}
 GEOP_TOKEN_REABERTURA_HORAS = 24
+# Perfis com franquia de emissões de relatório (renovada com token do TI), como o GESTOR no PHP.
+GEOP_RELATORIOS_COTA_PERFIS = env("GEOP_RELATORIOS_COTA_PERFIS", "GESTOR")
 GEOP_TOKEN_REABERTURA_TENTATIVAS = 5
+
+# --- E-mail (convites, recuperação de senha e respostas de solicitações de acesso) ---
+EMAIL_BACKEND = env("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend" if env("EMAIL_HOST")
+                    else "django.core.mail.backends.console.EmailBackend")
+EMAIL_HOST = env("EMAIL_HOST", "")
+EMAIL_PORT = env_int("EMAIL_PORT", 587)
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", True)
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", "GEOP <nao-responda@localhost>")
+PASSWORD_RESET_TIMEOUT = 60 * 60 * 2
+
+# Backups (comando `backup_banco`): pasta fora da mídia pública.
+GEOP_BACKUP_DIR = Path(env("GEOP_BACKUP_DIR", str(BASE_DIR / "backups")))
+GEOP_BACKUP_MANTER = env_int("GEOP_BACKUP_MANTER", 14)
 
 # --- Segurança em produção --------------------------------------------------
 SECURE_CONTENT_TYPE_NOSNIFF = True

@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% block titulo %}Criar senha{% endblock %}
+{% block corpo %}<div class="login-wrap"><form method="post" class="card login-card" novalidate>{% csrf_token %}
+  <h1>Olá, {{ usuario.get_short_name }}!</h1><p class="muted">Crie sua senha para acessar o GEOP ({{ usuario.email }}).</p>
+  {% include "core/_campos.html" %}<button style="width:100%">Criar senha</button></form></div>{% endblock %}

@@ -82,6 +82,14 @@ class Ordem(models.Model):
     observacao_aprovacao = models.TextField(blank=True)
     origem = models.CharField(max_length=30, default="MANUAL")
     custo_materiais = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    custo_mao_obra = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    custo_terceiros = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    custo_total_final = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    qualidade_percentual = models.PositiveSmallIntegerField(null=True, blank=True)
+    preventiva = models.ForeignKey("operacao.Preventiva", null=True, blank=True, on_delete=models.SET_NULL,
+                                   related_name="ordens")
+    duplicidade_referencia = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL,
+                                               related_name="+")
     reabertura_contagem = models.PositiveIntegerField(default=0)
     solicitacao_encerramento = models.BooleanField(default=False)
     solicitacao_encerramento_em = models.DateTimeField(null=True, blank=True)
@@ -208,6 +216,11 @@ class Material(models.Model):
     unidade = models.CharField(max_length=30, blank=True)
     custo_unitario = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     observacao = models.TextField(blank=True)
+    material_estoque = models.ForeignKey("estoque.MaterialEstoque", null=True, blank=True, on_delete=models.SET_NULL,
+                                         related_name="usos")
+    situacao = models.CharField(max_length=25, default="CONSUMIDO", choices=[
+        ("CONSUMIDO", "Consumido"), ("RESERVADO", "Reservado"), ("AGUARDANDO_APROVACAO", "Aguardando aprovação"),
+        ("REPROVADO", "Reprovado"), ("AVULSO", "Fora do estoque")])
     usuario = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
     criado_em = models.DateTimeField(default=timezone.now)
 
@@ -222,6 +235,7 @@ class Material(models.Model):
 
 class ChecklistItem(models.Model):
     ordem = models.ForeignKey(Ordem, on_delete=models.CASCADE, related_name="checklist")
+    modelo_item = models.ForeignKey("ChecklistModeloItem", null=True, blank=True, on_delete=models.SET_NULL)
     tarefa_plano = models.ForeignKey("limpeza.PlanoTarefa", null=True, blank=True, on_delete=models.SET_NULL)
     descricao = models.CharField(max_length=255)
     obrigatorio = models.BooleanField(default=True)
@@ -330,6 +344,35 @@ class OrdemPatrimonio(models.Model):
         ordering = ["-vinculado_em"]
         verbose_name = "patrimônio vinculado"
         verbose_name_plural = "patrimônios vinculados"
+
+
+class ChecklistModelo(models.Model):
+    """Checklist padrão de uma categoria; cada nova ordem recebe uma cópia (snapshot) dos itens."""
+
+    categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE, related_name="checklist_modelos")
+    nome = models.CharField(max_length=160)
+    ativo = models.BooleanField(default=True)
+    criado_por = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    criado_em = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["categoria__nome", "nome"]
+        verbose_name = "modelo de checklist"
+        verbose_name_plural = "modelos de checklist"
+
+    def __str__(self):
+        return f"{self.categoria} — {self.nome}"
+
+
+class ChecklistModeloItem(models.Model):
+    modelo = models.ForeignKey(ChecklistModelo, on_delete=models.CASCADE, related_name="itens")
+    descricao = models.CharField(max_length=255)
+    obrigatorio = models.BooleanField(default=False)
+    exige_foto = models.BooleanField(default=False)
+    posicao = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["posicao", "id"]
 
 
 class NumeroSequencia(models.Model):

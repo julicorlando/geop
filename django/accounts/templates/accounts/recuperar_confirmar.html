@@ -1,0 +1,3 @@
+{% extends "base.html" %}
+{% block titulo %}Nova senha{% endblock %}
+{% block corpo %}<div class="login-wrap"><div class="card login-card">{% if validlink %}<form method="post">{% csrf_token %}<h1>Nova senha</h1>{% include "core/_campos.html" %}<button style="width:100%">Salvar</button></form>{% else %}<h1>Link inválido</h1><p class="muted">O link expirou ou já foi usado.</p><a href="{% url 'accounts:recuperar' %}">Pedir outro</a>{% endif %}</div></div>{% endblock %}
