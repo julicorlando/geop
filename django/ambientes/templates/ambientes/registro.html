@@ -1,0 +1,30 @@
+{% extends "base.html" %}{% load geop %}
+{% block titulo %}Registrar limpeza{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Registrar limpeza · {{ ambiente.nome_publico }}</h1><p class="subtitulo">{{ ambiente.local }}{% if ambiente.exige_foto_asg %} · foto obrigatória{% endif %}</p></div>
+<form method="post" enctype="multipart/form-data" novalidate>{% csrf_token %}
+  {% if form.non_field_errors %}<div class="msg msg-error" style="margin-bottom:1rem">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+  <div class="card"><h2>O que foi feito</h2>
+    {% if vinculos %}<div class="campo"><span class="rotulo-campo">Ações</span>
+      <div class="form-grade">{% for v in vinculos %}<label class="checkbox"><input type="checkbox" name="acoes" value="{{ v.acao_id }}" {% if v.acao_id|stringformat:"s" in form.acoes.value or v.obrigatoria and not form.is_bound %}checked{% endif %}> {{ v.acao.nome }}{% if v.obrigatoria %} <span class="badge badge-alerta">obrigatória</span>{% endif %}{% if v.acao.exige_foto %} 📷{% endif %}</label>{% endfor %}</div></div>{% endif %}
+    <details class="painel"><summary>Tarefas do plano de limpeza</summary>{{ form.tarefas }}</details>
+  </div>
+  <div class="card"><h2>Equipe</h2>
+    <div class="campo">{{ form.equipe }}</div>
+    <div class="form-grade"><div class="campo"><label>{{ form.principal.label }}</label>{{ form.principal }}</div>
+      <div class="campo"><label>{{ form.executor_nome.label }}</label>{{ form.executor_nome }}<div class="ajuda">Em branco: o registro fica em seu nome.</div></div></div>
+  </div>
+  <div class="card"><h2>Fotos e observações</h2>
+    <div class="campo">{{ form.fotos }}</div>
+    <div class="form-grade">
+    {% for f in form %}{% if f.name in "iniciado_em finalizado_em observacao_asg problema_encontrado insumos_repostos ordem" %}{% if f.name != "acoes" %}
+      <div class="campo{% if f|classe_widget == 'Textarea' %} campo-largo{% endif %}"><label for="{{ f.id_for_label }}">{{ f.label }}</label>{{ f }}{% if f.help_text %}<div class="ajuda">{{ f.help_text }}</div>{% endif %}{{ f.errors }}</div>
+    {% endif %}{% endif %}{% endfor %}
+    </div>
+  </div>
+  <button type="submit">Enviar para validação</button>
+</form>
+{% if recentes %}<div class="card" style="margin-top:1rem"><h2>Registros recentes</h2><div class="tabela-wrap"><table>
+  {% for r in recentes %}<tr><td>{{ r.finalizado_em|date:"d/m H:i" }}</td><td>{{ r.equipe_nomes }}{% if r.ordem %}<span class="sub">{{ r.ordem.numero }}</span>{% endif %}</td><td>{% badge_status r %}</td></tr>{% endfor %}
+</table></div></div>{% endif %}
+{% endblock %}

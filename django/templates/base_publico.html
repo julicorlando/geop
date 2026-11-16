@@ -1,0 +1,8 @@
+{% extends "base.html" %}{% load static %}
+{% block corpo %}
+<main class="publico">
+  <div class="marca-publica"><img src="{% static 'icon.svg' %}" width="28" height="28" alt=""> GEOP · {{ GEOP_NOME_UNIDADE }}</div>
+  {% include "core/_mensagens.html" %}
+  {% block conteudo %}{% endblock %}
+</main>
+{% endblock %}

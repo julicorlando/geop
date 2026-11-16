@@ -1,0 +1,24 @@
+{% load geop %}
+<div class="galeria">
+{% for f in fotos %}
+  <figure class="foto" style="margin:0">
+    {% if publico %}
+      <a href="{% url 'ordens:publica_arquivo' ordem.pk token f.pk %}" data-ampliar><img loading="lazy" src="{% url 'ordens:publica_miniatura' ordem.pk token f.pk %}" alt="{{ f.descricao|default:f.get_tipo_display }}"></a>
+    {% else %}
+      <a href="{% url 'ordens:arquivo' f.pk %}" data-ampliar><img loading="lazy" src="{% url 'ordens:miniatura' f.pk %}" alt="{{ f.descricao|default:f.get_tipo_display }}"></a>
+    {% endif %}
+    <figcaption class="legenda"><span>{{ f.criado_em|date:"d/m H:i" }}{% if f.usuario %} · {{ f.usuario.get_short_name }}{% elif f.origem == "PUBLICO" %} · link público{% endif %}</span><span title="Original: {{ f.tamanho_original|tamanho }}">{{ f.tamanho|tamanho }}</span></figcaption>
+    {% if not publico and atualizar %}
+    <div class="ferramentas nao-imprimir">
+      {% if gerenciar %}
+      <form method="post">{% csrf_token %}<input type="hidden" name="acao" value="mover_foto"><input type="hidden" name="anexo_id" value="{{ f.pk }}">
+        <select name="novo_tipo" onchange="this.form.submit()" aria-label="Mover foto">{% for t in tipos_foto %}<option value="{{ t.value }}" {% if t.value == f.tipo %}selected{% endif %}>{{ t.label }}</option>{% endfor %}</select></form>
+      {% endif %}
+      {% if gerenciar or f.usuario_id == user.pk and not ordem.encerrada %}
+      <form method="post" data-confirmar="Apagar esta foto?">{% csrf_token %}<input type="hidden" name="acao" value="excluir_anexo"><input type="hidden" name="anexo_id" value="{{ f.pk }}"><button class="btn btn-sec btn-peq" title="Apagar">🗑</button></form>
+      {% endif %}
+    </div>
+    {% endif %}
+  </figure>
+{% endfor %}
+</div>

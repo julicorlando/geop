@@ -1,0 +1,3 @@
+{% extends request.user.is_authenticated|yesno:"base.html,base_publico.html" %}
+{% block titulo %}Não encontrado{% endblock %}
+{% block conteudo %}<div class="card" style="text-align:center;padding:2.5rem"><h1>Página não encontrada</h1><p class="muted">O endereço não existe ou o link não é mais válido.</p><a class="btn btn-sec" href="/">Voltar ao início</a></div>{% endblock %}

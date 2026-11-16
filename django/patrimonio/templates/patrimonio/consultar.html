@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block titulo %}Patrimônio{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Consultar patrimônio</h1>
+  <p class="subtitulo">{% if configurado %}Consulta o cadastro externo de patrimônio (somente leitura).{% else %}Banco externo não configurado: a consulta mostra apenas os vínculos já feitos nas ordens.{% endif %}</p></div>
+<form class="card filtros" method="get"><div class="campo"><label>Código de barras, nº de patrimônio ou série</label><input type="search" name="codigo" value="{{ codigo }}" autofocus></div><div class="campo"><button>Consultar</button></div></form>
+{% if codigo and configurado %}
+<div class="card"><h2>Cadastro externo</h2>
+  {% for r in resultados %}<dl class="dados" style="border-bottom:1px solid var(--border);padding:.5rem 0">{% for k, v in r.items %}{% if v %}<dt>{{ k }}</dt><dd>{{ v }}</dd>{% endif %}{% endfor %}</dl>
+  {% empty %}<p class="vazio">Nada encontrado.</p>{% endfor %}</div>
+{% endif %}
+<div class="card"><h2>Histórico de vínculos com ordens</h2><div class="tabela-wrap"><table>
+  <tr><th>Patrimônio</th><th>Ordem</th><th>Vinculado</th><th>Situação</th></tr>
+  {% for p in historico %}<tr><td><strong>{{ p.numero_patrimonio }}</strong><span class="sub">{{ p.descricao }} {{ p.marca }} {{ p.modelo }}</span></td>
+    <td><a href="{% url 'ordens:detalhe' p.ordem_id %}">{{ p.ordem.numero }}</a><span class="sub">{{ p.ordem.titulo|truncatechars:50 }}</span></td>
+    <td>{{ p.vinculado_em|date:"d/m/Y" }}<span class="sub">{{ p.vinculado_por }}</span></td>
+    <td>{% if p.ativo %}<span class="badge badge-sucesso">vinculado</span>{% else %}<span class="badge badge-neutro">desvinculado</span>{% endif %}</td></tr>
+  {% empty %}<tr><td colspan="4" class="vazio">Sem registros.</td></tr>{% endfor %}
+</table></div>{% include "core/_paginacao.html" with pagina=historico %}</div>
+{% endblock %}

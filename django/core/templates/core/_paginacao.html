@@ -1,0 +1,7 @@
+{% if pagina.paginator.num_pages > 1 %}
+<nav class="paginacao" aria-label="Paginação">
+  {% if pagina.has_previous %}<a class="btn btn-sec btn-peq" href="?{% if params %}{{ params }}&{% endif %}pagina={{ pagina.previous_page_number }}">← Anterior</a>{% endif %}
+  <span class="muted">Página {{ pagina.number }} de {{ pagina.paginator.num_pages }} · {{ pagina.paginator.count }} registro{{ pagina.paginator.count|pluralize }}</span>
+  {% if pagina.has_next %}<a class="btn btn-sec btn-peq" href="?{% if params %}{{ params }}&{% endif %}pagina={{ pagina.next_page_number }}">Próxima →</a>{% endif %}
+</nav>
+{% endif %}

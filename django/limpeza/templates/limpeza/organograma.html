@@ -1,0 +1,15 @@
+{% extends "base.html" %}{% load geop %}
+{% block titulo %}Organograma da limpeza{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Organograma da limpeza</h1>
+  <div class="acoes">{% if user|pode:"limpeza.organograma" %}<a class="btn" href="{% url 'limpeza:organograma_novo' %}">+ Colaborador</a>{% endif %}</div></div>
+<div class="card"><div class="tabela-wrap"><table>
+  <tr><th>Colaborador</th><th>Cargo</th><th>Turno</th><th>Contato</th><th>Usuário GEOP</th><th></th></tr>
+  {% for n in nos %}
+  <tr><td style="padding-left:{{ n.nivel|add:1 }}rem">{% if n.nivel %}└ {% endif %}<strong>{{ n.nome_colaborador }}</strong>{% if not n.ativo %} <span class="badge badge-neutro">inativo</span>{% endif %}</td>
+    <td>{{ n.cargo }}{% if n.eh_supervisor %} <span class="badge badge-escuro">supervisor</span>{% endif %}</td><td>{{ n.turno|default:"—" }}</td><td>{{ n.contato|default:"—" }}</td>
+    <td>{{ n.usuario|default:"—" }}</td>
+    <td>{% if user|pode:"limpeza.organograma" %}<a class="btn btn-sec btn-peq" href="{% url 'limpeza:organograma_editar' n.pk %}">Editar</a>{% endif %}</td></tr>
+  {% empty %}<tr><td colspan="6" class="vazio">Nenhum colaborador cadastrado.</td></tr>{% endfor %}
+</table></div></div>
+{% endblock %}

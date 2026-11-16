@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block titulo %}Alterar senha{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Alterar senha</h1></div>
+{% if obrigatoria %}<div class="msg msg-warning" style="margin-bottom:1rem">Por segurança, defina uma nova senha antes de continuar.</div>{% endif %}
+<form method="post" class="card" style="max-width:520px" novalidate>{% csrf_token %}
+  {% include "core/_campos.html" %}
+  <button type="submit">Salvar nova senha</button>
+</form>
+{% endblock %}

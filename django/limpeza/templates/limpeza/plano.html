@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% load geop %}
+{% block titulo %}Plano de tarefas{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Plano de tarefas da limpeza</h1>
+  <div class="acoes">{% if user|pode:"limpeza.plano" %}<a class="btn btn-sec" href="{% url 'limpeza:grupo_novo' %}">+ Grupo</a><a class="btn" href="{% url 'limpeza:tarefa_nova' %}">+ Tarefa</a>{% endif %}</div>
+  <p class="subtitulo">As tarefas ativas aparecem no checklist das Ordens de Limpeza e no registro pelo QR.</p></div>
+{% for g in grupos %}
+<div class="card"><div class="card-titulo"><h2>{{ g.nome }}{% if not g.ativo %} <span class="badge badge-neutro">inativo</span>{% endif %}</h2>
+  {% if user|pode:"limpeza.plano" %}<div class="acoes chips"><a class="btn btn-sec btn-peq" href="{% url 'limpeza:tarefa_nova' %}?grupo={{ g.pk }}">+ Tarefa</a><a class="btn btn-sec btn-peq" href="{% url 'limpeza:grupo_editar' g.pk %}">Editar grupo</a></div>{% endif %}</div>
+  <div class="tabela-wrap"><table>
+  {% for t in g.tarefas.all %}<tr><td>{{ t.descricao }}{% if t.observacao %}<span class="sub">{{ t.observacao }}</span>{% endif %}</td><td>{{ t.periodicidade }}</td>
+    <td>{% if t.exige_foto %}<span class="badge badge-info">foto</span>{% endif %}{% if not t.ativo %} <span class="badge badge-neutro">inativa</span>{% endif %}</td>
+    <td>{% if user|pode:"limpeza.plano" %}<a class="btn btn-sec btn-peq" href="{% url 'limpeza:tarefa_editar' t.pk %}">Editar</a>{% endif %}</td></tr>
+  {% empty %}<tr><td class="vazio">Sem tarefas.</td></tr>{% endfor %}
+  </table></div></div>
+{% empty %}<div class="card vazio">Nenhum grupo cadastrado.</div>{% endfor %}
+{% endblock %}

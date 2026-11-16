@@ -1,0 +1,32 @@
+{% extends "base.html" %}{% load geop %}
+{% block titulo %}Validar limpeza{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Validar · {{ registro.ambiente }}</h1><div class="acoes">{% badge_status registro %}</div></div>
+<div class="detalhe-layout">
+  <div>
+    <div class="card"><dl class="dados">
+      <dt>Equipe</dt><dd>{% for r in responsaveis %}{{ r.nome }}{% if r.principal %} (principal){% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}</dd>
+      <dt>Lançado por</dt><dd>{{ registro.asg }}</dd>
+      <dt>Período</dt><dd>{{ registro.iniciado_em|date:"d/m H:i"|default:"?" }} → {{ registro.finalizado_em|date:"d/m H:i" }}</dd>
+      {% if registro.ordem %}<dt>Ordem</dt><dd><a href="{% url 'ordens:detalhe' registro.ordem_id %}">{{ registro.ordem.numero }}</a></dd>{% endif %}
+      <dt>Feito</dt><dd>{% for i in itens %}{{ i.descricao }}{% if not forloop.last %} · {% endif %}{% endfor %}</dd>
+      {% if registro.observacao_asg %}<dt>Observações</dt><dd>{{ registro.observacao_asg }}</dd>{% endif %}
+      {% if registro.problema_encontrado %}<dt>Problema</dt><dd>{{ registro.problema_encontrado }}</dd>{% endif %}
+      {% if registro.insumos_repostos %}<dt>Insumos</dt><dd>{{ registro.insumos_repostos }}</dd>{% endif %}
+    </dl></div>
+    <div class="card"><h2>Fotos</h2><div class="galeria">
+      {% for f in fotos %}<figure class="foto" style="margin:0"><a href="{% url 'ambientes:foto' f.pk %}" data-ampliar><img loading="lazy" src="{% url 'ambientes:foto_mini' f.pk %}" alt=""></a>
+        <figcaption class="legenda"><span>{{ f.get_origem_display }} · {{ f.get_tipo_display }}</span><span>{{ f.tamanho|tamanho }}</span></figcaption></figure>
+      {% empty %}<p class="muted">Sem fotos.</p>{% endfor %}</div></div>
+  </div>
+  <div>
+    {% if registro.status == "AGUARDANDO_VALIDACAO" %}
+    <form method="post" enctype="multipart/form-data" class="card" novalidate>{% csrf_token %}<h2>Decisão</h2>
+      {% include "core/_campos.html" %}
+      {% if registro.ambiente.exige_foto_supervisor %}<p class="ajuda">Este ambiente exige foto de inspeção para aprovar.</p>{% endif %}
+      <button>Registrar validação</button></form>
+    {% endif %}
+    {% for v in validacoes %}<div class="card"><strong>{{ v.get_resultado_display }}</strong> por {{ v.supervisor }} <span class="muted">{{ v.criado_em|date:"d/m H:i" }}</span><p>{{ v.observacao }}</p></div>{% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block titulo %}Nova ordem{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Nova ordem</h1><p class="subtitulo">Categorias “Limpeza” geram uma Ordem de Limpeza (OL) com checklist e equipe ASG.</p></div>
+<form method="post" enctype="multipart/form-data" novalidate>{% csrf_token %}
+  {% if form.non_field_errors %}<div class="msg msg-error" style="margin-bottom:1rem">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+  <div class="card"><h2>Dados da ordem</h2>
+    <div class="form-grade">
+      {% for f in form %}{% if f.name in "titulo,local,categoria,prioridade,prazo,valor_previsto_orcamento,descricao" %}
+        <div class="campo{% if f.name == 'descricao' %} campo-largo{% endif %}"><label for="{{ f.id_for_label }}">{{ f.label }}{% if f.field.required %} *{% endif %}</label>{{ f }}
+          {% if f.help_text %}<div class="ajuda">{{ f.help_text }}</div>{% endif %}{{ f.errors }}</div>
+      {% endif %}{% endfor %}
+    </div>
+  </div>
+  <div class="card"><h2>Responsáveis</h2>
+    <div class="form-grade">
+      {% for f in form %}{% if f.name in "agente,auxiliares,gestor" %}
+        <div class="campo"><label for="{{ f.id_for_label }}">{{ f.label }}</label>{{ f }}{% if f.help_text %}<div class="ajuda">{{ f.help_text }}</div>{% endif %}{{ f.errors }}</div>
+      {% endif %}{% endfor %}
+    </div>
+  </div>
+  <div class="card"><h2>Fotos da abertura</h2>
+    <div class="campo">{{ form.fotos }}<div class="ajuda">Até 10 fotos. Elas são reduzidas automaticamente (no celular e no servidor), mantendo boa qualidade.</div>{{ form.fotos.errors }}</div>
+  </div>
+  <details class="card painel" {% if form.tarefas.value or form.equipe.value %}open{% endif %}><summary>Ordem de limpeza (OL): checklist e equipe</summary>
+    <div class="campo"><label>{{ form.tarefas.label }}</label>{{ form.tarefas }}</div>
+    <div class="campo"><label for="{{ form.itens_livres.id_for_label }}">{{ form.itens_livres.label }}</label>{{ form.itens_livres }}</div>
+    <div class="campo"><label>{{ form.equipe.label }}</label>{{ form.equipe }}</div>
+    <div class="form-grade">
+      <div class="campo"><label for="{{ form.asg_principal.id_for_label }}">{{ form.asg_principal.label }}</label>{{ form.asg_principal }}</div>
+      <div class="campo"><label for="{{ form.supervisor.id_for_label }}">{{ form.supervisor.label }}</label>{{ form.supervisor }}</div>
+    </div>
+  </details>
+  <div class="chips"><button type="submit">Abrir ordem</button><a class="btn btn-sec" href="{% url 'ordens:lista' %}">Cancelar</a></div>
+</form>
+{% endblock %}

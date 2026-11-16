@@ -1,0 +1,28 @@
+{% extends "base.html" %}{% load geop %}
+{% block titulo %}Ordens{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Ordens de serviço e limpeza</h1>
+  <div class="acoes">{% if user|pode:"os.criar" %}<a class="btn" href="{% url 'ordens:nova' %}">+ Nova ordem</a>{% endif %}</div></div>
+<form class="card filtros" method="get">
+  {% for f in form %}<div class="campo"><label for="{{ f.id_for_label }}">{{ f.label }}</label>{{ f }}</div>{% endfor %}
+  <div class="campo"><label>Ordenar</label><select name="ordem">
+    <option value="recentes">Mais recentes</option>
+    <option value="prazo" {% if request.GET.ordem == "prazo" %}selected{% endif %}>Prazo</option>
+    <option value="prioridade" {% if request.GET.ordem == "prioridade" %}selected{% endif %}>Prioridade</option>
+    <option value="antigas" {% if request.GET.ordem == "antigas" %}selected{% endif %}>Mais antigas</option></select></div>
+  <div class="campo chips"><button>Filtrar</button><a class="btn btn-sec" href="{% url 'ordens:lista' %}">Limpar</a></div>
+</form>
+<div class="card"><div class="tabela-wrap"><table>
+  <tr><th>Ordem</th><th>Local / categoria</th><th>Status</th><th>Prioridade</th><th>Responsável</th><th>Prazo</th></tr>
+  {% for o in pagina %}
+  <tr class="{% if o.atrasada %}atrasada{% endif %}">
+    <td><a href="{% url 'ordens:detalhe' o.pk %}"><strong>{{ o.numero }}</strong></a>
+      <span class="sub">{{ o.titulo|truncatechars:70 }}{% if o.n_fotos %} · 📷 {{ o.n_fotos }}{% endif %}{% if o.solicitacao_encerramento and not o.encerrada %} · <span class="badge badge-alerta">encerramento solicitado</span>{% endif %}</span></td>
+    <td>{{ o.local }}<span class="sub">{{ o.categoria }}</span></td>
+    <td>{% badge_status o %}</td><td>{% badge_prioridade o %}</td>
+    <td>{{ o.agente|default:"—" }}</td>
+    <td style="white-space:nowrap">{{ o.prazo|date:"d/m/Y H:i"|default:"—" }}{% if o.atrasada %}<span class="sub" style="color:var(--perigo)">atrasada</span>{% endif %}</td>
+  </tr>
+  {% empty %}<tr><td colspan="6" class="vazio">Nenhuma ordem encontrada.</td></tr>{% endfor %}
+</table></div>{% include "core/_paginacao.html" %}</div>
+{% endblock %}

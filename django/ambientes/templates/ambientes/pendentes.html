@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block titulo %}Validações{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><h1>Limpezas aguardando validação</h1></div>
+<div class="card"><div class="tabela-wrap"><table>
+  <tr><th>Ambiente</th><th>Equipe</th><th>Término</th><th>Fotos</th><th></th></tr>
+  {% for r in registros %}<tr><td><strong>{{ r.ambiente }}</strong>{% if r.ordem %}<span class="sub">{{ r.ordem.numero }}</span>{% endif %}</td>
+    <td>{{ r.equipe_nomes }}<span class="sub">lançado por {{ r.asg }}</span></td><td>{{ r.finalizado_em|date:"d/m H:i" }}</td><td>{{ r.n_fotos }}</td>
+    <td><a class="btn btn-peq" href="{% url 'ambientes:validar' r.pk %}">Validar</a></td></tr>
+  {% empty %}<tr><td colspan="5" class="vazio">Nada pendente. 👍</td></tr>{% endfor %}
+</table></div></div>
+{% endblock %}

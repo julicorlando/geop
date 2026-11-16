@@ -1,0 +1,9 @@
+{% load geop %}
+<div class="tabela-wrap"><table>
+{% for o in ordens %}
+  <tr class="{% if o.atrasada %}atrasada{% endif %}">
+    <td><a href="{% url 'ordens:detalhe' o.pk %}"><strong>{{ o.numero }}</strong></a><span class="sub">{{ o.titulo|truncatechars:60 }} · {{ o.local }}</span></td>
+    <td>{% badge_status o %}<span class="sub">{% if o.prazo %}prazo {{ o.prazo|date:"d/m H:i" }}{% endif %}</span></td>
+  </tr>
+{% empty %}<tr><td class="vazio">{{ vazio|default:"Nenhuma ordem." }}</td></tr>{% endfor %}
+</table></div>
