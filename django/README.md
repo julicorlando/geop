@@ -118,6 +118,8 @@ Ou com Docker: `cp .env.example .env && docker compose up --build`.
 ```sh
 LEGACY_DATABASE_URL=mysql://usuario:senha@host:3306/banco \
 python manage.py importar_legado --uploads /caminho/geop.shoppingcarpina.com.br/public
+# ou, sem copiar a pasta: baixa as fotos do PHP que está no ar
+python manage.py importar_legado --uploads-url https://geop.shoppingcarpina.com.br/
 ```
 
 Importa setores, perfis, usuários (com as senhas), locais, categorias, organograma e plano da limpeza,

@@ -16,6 +16,7 @@ Uso (após `migrate`):
 from __future__ import annotations
 
 import os
+import time
 from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
@@ -68,6 +69,8 @@ class Command(EtapasModulos, BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--uploads", help="Pasta `public` do PHP (que contém `uploads/`).")
+        parser.add_argument("--uploads-url", help="Ou o endereço do PHP no ar (ex.: https://geop.shoppingcarpina.com.br/): "
+                                                  "as fotos são baixadas de <url>/uploads/…")
         parser.add_argument("--sem-arquivos", action="store_true", help="Importa só os dados, sem copiar fotos.")
         parser.add_argument("--usuario-padrao", type=int,
                             help="ID de usuário usado quando a referência original não existir (padrão: primeiro TI).")
@@ -78,9 +81,12 @@ class Command(EtapasModulos, BaseCommand):
             raise CommandError("Defina LEGACY_DATABASE_URL (mysql://usuario:senha@host:porta/banco).")
         self.legado = connections["legacy"]
         self.base_uploads = Path(opts["uploads"]).resolve() if opts.get("uploads") else None
+        self.uploads_url = (opts.get("uploads_url") or "").rstrip("/")
+        if self.uploads_url and not self.uploads_url.startswith(("https://", "http://")):
+            raise CommandError("--uploads-url deve começar com https://")
         self.copiar_arquivos = not opts["sem_arquivos"]
-        if self.copiar_arquivos and not self.base_uploads:
-            raise CommandError("Informe --uploads /caminho/public (ou use --sem-arquivos).")
+        if self.copiar_arquivos and not (self.base_uploads or self.uploads_url):
+            raise CommandError("Informe --uploads /caminho/public ou --uploads-url https://… (ou use --sem-arquivos).")
         self.bytes_antes = self.bytes_depois = self.arquivos_ok = self.arquivos_faltando = 0
         sincronizar(Permissao, Perfil)
 
@@ -323,11 +329,40 @@ class Command(EtapasModulos, BaseCommand):
         if "/uploads/" in rel:
             rel = rel[rel.index("/uploads/") + 1:]
         rel = rel.lstrip("/")
+        if not self.base_uploads:
+            return self.baixar_arquivo(rel)
         caminho = (self.base_uploads / rel).resolve()
         if not str(caminho).startswith(str(self.base_uploads)) or not caminho.is_file():
             self.arquivos_faltando += 1
             return None, None
         return caminho.read_bytes(), caminho.name
+
+    def baixar_arquivo(self, rel):
+        """Baixa um arquivo de <uploads_url>/<rel> (somente dentro de uploads/)."""
+        import posixpath
+        import urllib.error
+        import urllib.parse
+        import urllib.request
+
+        rel = posixpath.normpath(rel)
+        if not rel.startswith("uploads/") or ".." in rel.split("/"):
+            self.arquivos_faltando += 1
+            return None, None
+        url = f"{self.uploads_url}/{urllib.parse.quote(rel)}"
+        for tentativa in range(3):
+            try:
+                req = urllib.request.Request(url, headers={"User-Agent": "GEOP-importador/1.0"})
+                with urllib.request.urlopen(req, timeout=60) as resp:  # noqa: S310 (URL informada pelo operador)
+                    dados = resp.read(60 * 1024 * 1024)
+                return dados, posixpath.basename(rel)
+            except urllib.error.HTTPError as e:
+                if e.code in (403, 404, 410):
+                    break
+            except (urllib.error.URLError, TimeoutError, ConnectionError):
+                pass
+            time.sleep(2 * (tentativa + 1))
+        self.arquivos_faltando += 1
+        return None, None
 
     def preencher_arquivo(self, obj, dados, nome, pasta):
         mime = detectar_mime(dados[:16])
