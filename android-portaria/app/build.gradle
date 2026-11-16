@@ -1,0 +1,42 @@
+plugins { id "com.android.application" }
+
+android {
+    namespace "br.com.shoppingcarpina.geopportaria"
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "br.com.shoppingcarpina.geopportaria"
+        minSdk 24
+        targetSdk 34
+        versionCode Integer.parseInt(System.getenv("VERSION_CODE") ?: "1")
+        versionName "1.0." + (System.getenv("VERSION_CODE") ?: "1")
+        // Servidor padrão; pode ser trocado no app (botão ⚙).
+        buildConfigField "String", "SERVIDOR_PADRAO", "\"https://tst.shoppingcarpina.com.br\""
+    }
+
+    buildFeatures { buildConfig true }
+
+    signingConfigs {
+        release {
+            def ks = System.getenv("PORTARIA_KEYSTORE")
+            if (ks) {
+                storeFile file(ks)
+                storePassword System.getenv("PORTARIA_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("PORTARIA_KEY_ALIAS") ?: "portaria"
+                keyPassword System.getenv("PORTARIA_KEY_PASSWORD") ?: System.getenv("PORTARIA_KEYSTORE_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig System.getenv("PORTARIA_KEYSTORE") ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}

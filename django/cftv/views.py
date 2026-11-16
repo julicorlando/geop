@@ -225,7 +225,8 @@ def controle(request):
     for s in aprovadas:
         s.eventos_hoje = [e for e in s.eventos.all() if timezone.localdate(e.registrado_em) == hoje]
     return render(request, "cftv/controle.html", {"resultado": resultado, "erro": erro, "codigo": codigo,
-                                                  "aprovadas": aprovadas})
+                                                  "aprovadas": aprovadas,
+                                                  "liberacoes": services.liberacoes_do_dia(hoje)})
 
 
 # --------------------------------------------------------------------- páginas públicas

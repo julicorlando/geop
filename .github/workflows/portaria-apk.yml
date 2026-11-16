@@ -1,0 +1,47 @@
+name: APK Portaria (Sunmi)
+
+on:
+  push:
+    paths:
+      - "android-portaria/**"
+      - ".github/workflows/portaria-apk.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            android-portaria
+            .github
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.10.2"
+      - name: Chave de assinatura (opcional)
+        env:
+          KEYSTORE_B64: ${{ secrets.PORTARIA_KEYSTORE_B64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/portaria.jks"
+            echo "PORTARIA_KEYSTORE=$RUNNER_TEMP/portaria.jks" >> "$GITHUB_ENV"
+          fi
+      - name: Gerar APK
+        working-directory: android-portaria
+        env:
+          VERSION_CODE: ${{ github.run_number }}
+          PORTARIA_KEYSTORE_PASSWORD: ${{ secrets.PORTARIA_KEYSTORE_PASSWORD }}
+        run: |
+          gradle --no-daemon assembleRelease
+          mkdir -p ../dist
+          cp app/build/outputs/apk/release/app-release.apk "../dist/GEOP-Portaria-1.0.${VERSION_CODE}.apk"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GEOP-Portaria-apk
+          path: dist/*.apk
+          retention-days: 30

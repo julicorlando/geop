@@ -11,16 +11,26 @@
     <div class="campo"><label>Observação</label><input type="text" name="observacao"></div>
     <div class="chips"><button>Registrar</button><button type="button" class="btn btn-sec" id="abrir-camera">Usar câmera</button></div>
     <p class="ajuda">A primeira leitura do dia registra a entrada; a seguinte, a saída.</p></form>
-  <div class="card"><h2>Aprovadas para hoje</h2><div class="tabela-wrap"><table>
-  {% for s in aprovadas %}<tr><td><strong>{{ s.nome_completo }}</strong><span class="sub">{{ s.destino_nome }} · {{ s.hora_inicio|time:"H:i"|default:"" }}</span>{% for e in s.eventos_hoje %}<span class="sub">{{ e.get_tipo_display }} {{ e.registrado_em|date:"H:i" }}</span>{% endfor %}</td>
+  <div class="card"><h2>Aprovadas para hoje</h2>
+  <div class="campo"><input type="search" id="filtro-portaria" placeholder="Buscar por nome, CPF ou destino" autocomplete="off"></div>
+  <div class="tabela-wrap"><table class="lista-portaria">
+  {% for s in aprovadas %}<tr data-busca="{{ s.nome_completo|lower }} {{ s.cpf }} {{ s.destino_nome|lower }} {{ s.protocolo|lower }}"><td><strong>{{ s.nome_completo }}</strong><span class="sub">{{ s.destino_nome }} · {{ s.hora_inicio|time:"H:i"|default:"" }}</span>{% for e in s.eventos_hoje %}<span class="sub">{{ e.get_tipo_display }} {{ e.registrado_em|date:"H:i" }}</span>{% endfor %}</td>
     <td><form method="post" class="chips">{% csrf_token %}<input type="hidden" name="solicitacao_id" value="{{ s.pk }}"><button name="acao" value="entrada" class="btn btn-peq btn-sucesso">Entrada</button><button name="acao" value="saida" class="btn btn-peq btn-sec">Saída</button></form></td></tr>
-  {% empty %}<tr><td class="vazio">Nenhuma liberação aprovada para hoje.</td></tr>{% endfor %}</table></div></div>
+  {% empty %}<tr><td class="vazio">Nenhuma solicitação aprovada para hoje.</td></tr>{% endfor %}</table></div>
+  <h2 style="margin-top:1rem">Liberações internas de hoje</h2><div class="tabela-wrap"><table class="lista-portaria">
+  {% for l in liberacoes %}<tr data-busca="{{ l.nome_completo|lower }} {{ l.cpf }} {{ l.destino_nome|lower }}"><td><strong>{{ l.nome_completo }}</strong><span class="sub">CPF {{ l.cpf|slice:":3" }}.***.***-{{ l.cpf|slice:"9:" }} · {{ l.destino_nome }}</span><span class="sub">{% if l.hora_inicio %}{{ l.hora_inicio|time:"H:i" }}{% if l.hora_fim %}–{{ l.hora_fim|time:"H:i" }}{% endif %}{% else %}Dia todo{% endif %}{% if l.data_fim %} · até {{ l.data_fim|date:"d/m" }}{% endif %}</span>{% if l.observacoes %}<span class="sub">{{ l.observacoes }}</span>{% endif %}</td></tr>
+  {% empty %}<tr><td class="vazio">Nenhuma liberação interna para hoje.</td></tr>{% endfor %}</table></div></div>
 </div>
 {% endblock %}
 {% block scripts %}
 <script>
 (function(){
   var btn=document.getElementById("abrir-camera"), video=document.getElementById("camera"), campo=document.getElementById("codigo");
+  // Chamado pelo app Android da portaria (leitor Sunmi) com o conteúdo do QR lido.
+  window.geopLerCodigo=function(valor){campo.value=String(valor||"").trim();if(campo.value){document.getElementById("form-qr").submit();}};
+  var filtro=document.getElementById("filtro-portaria");
+  if(filtro){filtro.addEventListener("input",function(){var q=filtro.value.toLowerCase().replace(/[.\-]/g,"");
+    document.querySelectorAll(".lista-portaria tr[data-busca]").forEach(function(tr){tr.style.display=!q||tr.getAttribute("data-busca").replace(/[.\-]/g,"").indexOf(q)>=0?"":"none";});});}
   if(!("BarcodeDetector" in window)){btn.title="Este navegador não lê QR pela câmera; use um leitor USB ou digite o código.";}
   btn.addEventListener("click",function(){
     if(!("BarcodeDetector" in window)){alert(btn.title);return;}
